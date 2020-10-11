@@ -12,10 +12,9 @@ def remove_background(image_path):
     CANNY_THRESH_2 = 130
     
     # load the input image
-    image = cv2.imread(image_path)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    
+    image = cv2.imread(image_path,0)
+    blurred = cv2.GaussianBlur(image, (5, 5), 0)
+
     # obtain the edges of the image
     edges = cv2.Canny(blurred, CANNY_THRESH_1, CANNY_THRESH_2)
     edges = cv2.dilate(edges, None)
@@ -81,7 +80,7 @@ if __name__ == '__main__':
     qsd2_path = 'data/qsd2_w1/'
     qsd2_filenames = sorted(os.listdir(qsd2_path))
     
-    # for each query image, find the corresponding BBDD image
+    # for each query image, find the corresponding mask
     for idx,qsd2_filename in enumerate(qsd2_filenames):
         if qsd2_filename.endswith('.jpg'):
             mask = remove_background(os.path.join(qsd2_path, qsd2_filename))
