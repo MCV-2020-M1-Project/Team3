@@ -5,13 +5,11 @@ import imutils
 import cv2
 import numpy as np
 
-
+# function that removes the background by searching the edges and contours
 def remove_background(image_path):
     # Tunning parameters. We can put this as input to the function as well
     CANNY_THRESH_1 = 30
     CANNY_THRESH_2 = 130
-
-    MASK_COLOR = (0.0,0.0,0.0) # In BGR format
     
     # load the input image
     image = cv2.imread(image_path)
@@ -52,16 +50,8 @@ def remove_background(image_path):
               cmax=hull
          
     cv2.fillConvexPoly(mask, cmax, (255)) # fill the mask 
-    mask_stack = np.dstack([mask]*3)    # Create 3-channel mask
     
-    # Blend masked img into MASK_COLOR background 
-    mask_stack  = mask_stack.astype('float32') / 255.0          # Use float matrices, 
-    img         = image.astype('float32') / 255.0                 #  for easy blending
-    
-    masked = (mask_stack * img) + ((1 - mask_stack) * MASK_COLOR) # Blend
-    masked = (masked * 255).astype('uint8')                     # Convert back to 8-bit 
-    
-    return mask, masked
+    return mask
 
 def mask_evaluation(mask_path,annotation_path):
     mask = cv2.imread(mask_path,0)/255
@@ -94,7 +84,7 @@ if __name__ == '__main__':
     # for each query image, find the corresponding BBDD image
     for idx,qsd2_filename in enumerate(qsd2_filenames):
         if qsd2_filename.endswith('.jpg'):
-            mask, masked = remove_background(os.path.join(qsd2_path, qsd2_filename))
+            mask = remove_background(os.path.join(qsd2_path, qsd2_filename))
             cv2.imwrite(os.path.join(qsd2_path,qsd2_filename.split(".")[0])+'_G3.png',mask)
 
     # evaluate masks obtained
