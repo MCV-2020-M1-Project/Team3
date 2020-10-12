@@ -1,6 +1,4 @@
 import os
-import csv
-import pickle
 import operator
 import cv2 as cv
 import numpy as np
@@ -63,4 +61,4 @@ def get_k_images(qsd1_image_path, bbdd_histograms, k="10", n_bins=8, distance_me
         distances[bbdd_id] = cv.compareHist(qsd1_hist, bbdd_hist, OPENCV_DISTANCE_METRICS[distance_metric])
 
     k_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
-    return k_images
+    return [bbdd_img[0] for bbdd_img in k_images]

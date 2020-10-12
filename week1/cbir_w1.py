@@ -1,12 +1,8 @@
-import operator
 import pickle
 import os
-# import os.path
-import csv
-import cv2 as cv
 import dbp
 import metrics
-import numpy as np
+import ml_metrics as mlm
 
 if __name__ == '__main__':
 
@@ -21,18 +17,28 @@ if __name__ == '__main__':
 
     # for each query image, find the corresponding BBDD image
 
-    k = 10
-    n_bins = 256
+    k = 5
+    n_bins = 8
     color_space = "RGB"
     distance = "Hellinger"
 
     bbdd_histograms = dbp.compute_bbdd_histograms(bbdd_path, n_bins, color_space)
+
+    groundtruth_list = []
+    predicted_list = []
 
     for qsd1_filename in sorted(os.listdir(qsd1_path)):
         if qsd1_filename.endswith('.jpg'):
             image_id = int(qsd1_filename.replace('.jpg', ''))
             k_images = dbp.get_k_images(os.path.join(qsd1_path, qsd1_filename), bbdd_histograms, k, n_bins, distance, color_space)
 
-            print('----------------------')
             print('Image: {}, Groundtruth: {}'.format(qsd1_filename, groundtruth_images[image_id]))
-            print(k_images)
+            print('{} most similar images: {}'.format(k, k_images))
+            print('----------------------')
+
+            groundtruth_list.append(groundtruth_images[image_id])
+            predicted_list.append(k_images)
+
+    print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_list, predicted_list, k)))
+    print('*********************************************')
+    print('*********************************************')
