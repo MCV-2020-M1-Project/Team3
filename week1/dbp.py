@@ -1,6 +1,9 @@
 import os
+import csv
+import pickle
 import operator
 import cv2 as cv
+import numpy as np
 
 OPENCV_COLOR_SPACES = {
     "RGB": cv.COLOR_BGR2RGB,
@@ -17,60 +20,47 @@ OPENCV_DISTANCE_METRICS = {
     "Hellinger": cv.HISTCMP_BHATTACHARYYA
 }
 
-class dbp:
+def compute_histogram(image_path, n_bins, color_space="RGB"):
+    """
+    compute_histogram()
 
-    def compute_histogram(self, image_path, color_space="RGB"):
-        """
-        compute_histogram()
+    Function to compute ...
+    """
 
-        Function to compute ...
-        """
+    img = cv.imread(image_path)
 
-        hist_channels = [0]
-        hist_bins = [256]
-        hist_range = [0, 256]
+    n_channels = img.shape[2]
+    hist_channels = list(range(n_channels))
+    hist_bins = [n_bins,]*n_channels
+    hist_range = [0, 256]*n_channels
 
-        # if not gray --> 3 channels (RGB, HSV, ...)
-        if color_space != "GRAY":
-            hist_channels = hist_channels + [1, 2]
-            hist_bins = hist_bins * 3  # hist_bins = [256, 256, 256]
-            hist_range = hist_range * 3  # hist_range = [0, 256, 0, 256, 0, 256]
+    hist = cv.calcHist([cv.cvtColor(img, OPENCV_COLOR_SPACES[color_space])], hist_channels, None, hist_bins,
+                       hist_range)
+    hist = cv.normalize(hist, hist, alpha=0, beta=1,
+                        norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
+    return hist
 
-        img = cv.imread(image_path)
-        hist = cv.calcHist([cv.cvtColor(img, OPENCV_COLOR_SPACES[color_space])], hist_channels, None, hist_bins,
-                           hist_range)
-        hist = cv.normalize(hist, hist, alpha=0, beta=1,
-                            norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
+def compute_bbdd_histograms(bbdd_path, n_bins=8, color_space="RGB"):
+    image_set = sorted(os.listdir(bbdd_path))
+    histograms = {}
 
-        return hist
+    for image_filename in image_set:
+        if image_filename.endswith('.jpg'):
+            image_id = int(image_filename.replace('.jpg', '').replace('bbdd_', ''))
+            hist = compute_histogram(os.path.join(bbdd_path, image_filename), n_bins, color_space)
+            histograms[image_id] = hist
 
-    def process_images_as_histograms(self, path, color_space="RGB"):
-        image_set = sorted(os.listdir(path))
-        histograms = {}
+    return histograms
 
-        for filename in image_set:
-            if filename.endswith('.jpg'):
-                number = int(filename.replace('.jpg', '').replace('bbdd_', ''))
-                histogram = self.compute_histogram(os.path.join(path, filename), color_space)
-                histograms[number] = histogram
+def get_k_images(qsd1_image_path, bbdd_histograms, k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB"):
 
-        return histograms
+    reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
-    def find_top_similar(self, image_name, folder_path, bbdd_histograms, k="10", distance_metric="Hellinger", color_space="RGB"):
-        results = {}
-        reverse = False
+    qsd1_hist = compute_histogram(qsd1_image_path, n_bins, color_space)
+    distances = {}
 
-        if distance_metric in ("Correlation", "Intersection"):
-            reverse = True
+    for bbdd_id, bbdd_hist in bbdd_histograms.items():
+        distances[bbdd_id] = cv.compareHist(qsd1_hist, bbdd_hist, OPENCV_DISTANCE_METRICS[distance_metric])
 
-        if image_name.endswith('.jpg'):
-            number = int(image_name.replace('.jpg', ''))
-            hist = dbp.compute_histogram(os.path.join(folder_path, image_name), color_space)
-
-            distances = {}
-            for bbdd in bbdd_histograms.keys():
-                distances[bbdd] = cv.compareHist(hist, bbdd_histograms[bbdd], OPENCV_DISTANCE_METRICS[distance_metric])
-
-            results[number] = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
-
-        return results
+    k_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
+    return k_images
