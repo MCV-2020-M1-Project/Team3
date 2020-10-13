@@ -1,16 +1,18 @@
 import pickle
 import os
 import dbp
+
+import metrics
+
 import ml_metrics as mlm
 
 if __name__ == '__main__':
 
     print('*********************************************')
 
-    bbdd_path = 'D:\MCV\M1\Project\BBDD'
+    bbdd_path = '../data/BBDD'
+    qsd1_path = '../data/qsd1_w1'
 
-    qsd1_path = 'D:\MCV\M1\Project\qsd1_w1'
-    image_set = sorted(os.listdir(qsd1_path))
 
     # load groundtruth images of the query dataset
     groundtruth_images = pickle.load(open(os.path.join(qsd1_path, "gt_corresps.pkl"), 'rb'))
@@ -34,5 +36,3 @@ if __name__ == '__main__':
         print(t)
     print("MAP@k: ")
     print(mlm.mapk(histograms, results, 200))
-
-
