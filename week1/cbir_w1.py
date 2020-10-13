@@ -20,7 +20,7 @@ if __name__ == '__main__':
     k = 5
     n_bins = 8
     color_space = "RGB"
-    distance = "Hellinger"
+    distance = "Chi-Squared"
 
     bbdd_histograms = dbp.compute_bbdd_histograms(bbdd_path, n_bins, color_space)
 
