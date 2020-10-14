@@ -143,9 +143,10 @@ def mask_evaluation(mask_path,groundtruth_path):
     TN = np.dot(1-groundtruth_vector, 1-mask_vector) # true negative
     FN = np.dot(groundtruth_vector, 1-mask_vector) # false positive
 
-    precision = TP / (TP+FP)
-    recall = TP / (TP+FN)
-    f1 = 2 * (precision*recall) / (precision+recall)
+    epsilon = 1e-10
+    precision = TP / (TP+FP+epsilon)
+    recall = TP / (TP+FN+epsilon)
+    f1 = 2 * (precision*recall) / (precision+recall+epsilon)
 
     return precision, recall, f1
 

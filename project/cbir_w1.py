@@ -45,8 +45,6 @@ def run():
     print('*********************************************')
 
 
-
-
     # Background removal main (in progress):
 
     qsd2_path = '../data/qsd2_w1/'
