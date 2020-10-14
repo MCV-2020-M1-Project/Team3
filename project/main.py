@@ -1,8 +1,6 @@
-from project.lib import histogram
 import sys
 
-import week1 as w1
-
+import cbir_w1 as w1
 
 if __name__=="__main__":
 
