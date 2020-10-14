@@ -7,7 +7,6 @@ import ml_metrics as mlm
 if __name__ == '__main__':
 
     print('*********************************************')
-    print('*********************************************')
 
     bbdd_path = '../data/BBDD'
     qsd1_path = '../data/qsd1_w1'
@@ -20,9 +19,12 @@ if __name__ == '__main__':
     k = 5
     n_bins = 8
     color_space = "RGB"
-    distance = "Chi-Squared"
+    distance = "Hellinger"
 
+    print("Computing bbdd histograms...", end=' ', flush=True)
     bbdd_histograms = dbp.compute_bbdd_histograms(bbdd_path, n_bins, color_space)
+    print("Done!")
+    print('----------------------')
 
     groundtruth_list = []
     predicted_list = []
@@ -40,5 +42,4 @@ if __name__ == '__main__':
             predicted_list.append(k_images)
 
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_list, predicted_list, k)))
-    print('*********************************************')
     print('*********************************************')
