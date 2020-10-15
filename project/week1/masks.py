@@ -30,7 +30,7 @@ def get_mask_M1(image_path, color_space="RGB"):
 
 def get_mask_M2(image_path, color_space="RGB"):
     """
-    get_mask_M1()
+    get_mask_M2()
 
     Function to compute a binary mask of the background using method 2...
     """
@@ -55,7 +55,7 @@ def get_mask_M2(image_path, color_space="RGB"):
 
 def get_mask_M3(image_path):
     """
-    get_mask_M1()
+    get_mask_M3()
 
     Function to compute a binary mask of the background using method 3...
     """
@@ -174,3 +174,50 @@ def mask_average_evaluation(masks_path, method="M1"):
             n_masks += 1
 
     return avg_precision/n_masks, avg_recall/n_masks, avg_f1/n_masks
+
+def get_foreground(image_path,mask_path):
+    """
+    get_foreground()
+
+    Function to retrieve the masked image without background...
+    """
+    # load the input and mask images
+    image = cv.imread(image_path,0)
+    mask = cv.imread(mask_path,0)
+    
+    # combine the mask and the image
+    masked = cv.bitwise_and(mask,image)
+
+    # convert the masked image to grayscale
+    gray = cv.cvtColor(masked,cv.COLOR_BGR2GRAY)
+    
+    # Coordinates of non-black pixels.
+    coords = np.argwhere(gray)
+    # Bounding box of non-black pixels.
+    x0, y0 = coords.min(axis=0)
+    x1, y1 = coords.max(axis=0) + 1
+    
+    # Get the contents of the bounding box.
+    foreground = masked[x0:x1, y0:y1]
+    
+    return foreground
+
+def compute_foregrounds(images_path,masks_path,method):
+    """
+    compute_foregrounds()
+
+    Function to compute all foregrounds ...
+    """
+
+    # for each query image, apply the corresponding mask
+    for image_filename in sorted(os.listdir(images_path)):
+        if image_filename.endswith('.jpg'):
+            image_path = os.path.join(images_path, image_filename)
+            mask_path = os.path.join(masks_path,image_filename.split(".")[0]+'_G3_' + method + '.png')
+            
+            foreground = get_foreground(image_path, mask_path)
+
+            cv.imwrite(os.path.join(images_path,image_filename.split(".")[0])+'_G3_' + method + '_cut.jpg',foreground)
+            
+            
+            
