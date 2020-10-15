@@ -29,6 +29,8 @@ def compute_histogram(image_path, n_bins, color_space="RGB"):
     img = cv.imread(image_path)
 
     n_channels = img.shape[2]
+    if color_space == "GRAY":
+        n_channels = 1
     hist_channels = list(range(n_channels))
     hist_bins = [n_bins,]*n_channels
     hist_range = [0, 256]*n_channels
