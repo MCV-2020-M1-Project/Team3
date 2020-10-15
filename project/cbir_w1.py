@@ -46,38 +46,42 @@ def run():
 
     # Background removal main:
 
-    qsd2_path = '../data/qsd2_w1/'
+    query_path_2 = '../data/qsd2_w1'
     method = "M2"
     color_space = "HSV"
 
-    masks.compute_masks(qsd2_path, method, color_space)
+    masks.compute_masks(query_path_2, method, color_space)
     
-    avg_precision, avg_recall, avg_f1 = masks.mask_average_evaluation(qsd2_path, method)
+    # the calculated masks and foregrounds will be save in 'data/qsd2_w1/results_Mx/'
+    results_path = os.path.join(query_path_2+'/results_'+method+'/')
+    
+    avg_precision, avg_recall, avg_f1 = masks.mask_average_evaluation(results_path,query_path_2, method)
 
     print('-----------------------------------')
     print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
     
 
-    masks.compute_foregrounds(qsd2_path,qsd2_path, method)
+    masks.compute_foregrounds(query_path_2,results_path, method)
 
-    query_path_2 = '../data/qsd2_w1'
+
     predicted_images_list_2 = []
     groundtruth_images_list_2 = []
     
     # load groundtruth images of the query dataset
     groundtruth_images_2 = pickle.load(open(os.path.join(query_path_2, "gt_corresps.pkl"), 'rb'))
     
-    for query_filename in sorted(os.listdir(query_path_2)):
-        if query_filename.endswith('_cut.jpg'):
-            image_id = int(query_filename.split("_")[0])
-            predicted_images = hist.get_k_images(os.path.join(query_path_2, query_filename),
+    # find the k most similar for the foreground
+    for query_filename in sorted(os.listdir(results_path)):
+        if query_filename.endswith('.jpg'):
+            image_id = int(query_filename.split(".")[0])
+            predicted_images_2 = hist.get_k_images(os.path.join(results_path, query_filename),
                                     bbdd_histograms, k, n_bins, distance, color_space)
             print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images_2[image_id]))
             print('{} most similar images: {}'.format(k, predicted_images))
             print('----------------------')
 
-            groundtruth_images_list_2.append(groundtruth_images[image_id])
-            predicted_images_list_2.append(predicted_images)
+            groundtruth_images_list_2.append(groundtruth_images_2[image_id])
+            predicted_images_list_2.append(predicted_images_2)
             
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_images_list_2, predicted_images_list_2, k))) 
             
