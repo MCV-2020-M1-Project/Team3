@@ -3,7 +3,7 @@ import os
 import ml_metrics as mlm
 
 from week1 import histogram as hist
-from week1 import masks
+from week1 import masks 
 
 def run():
     print('*********************************************')
@@ -42,18 +42,36 @@ def run():
             predicted_images_list.append(predicted_images)
 
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_images_list, predicted_images_list, k)))
-    print('*********************************************')
 
 
-    # Background removal main (in progress):
+    # Background removal main:
 
     qsd2_path = '../data/qsd2_w1/'
     method = "M2"
     color_space = "HSV"
 
     masks.compute_masks(qsd2_path, method, color_space)
-
+    
     avg_precision, avg_recall, avg_f1 = masks.mask_average_evaluation(qsd2_path, method)
 
     print('-----------------------------------')
     print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
+    
+
+    masks.compute_foregrounds(qsd2_path,qsd2_path, method)
+
+    predicted_images_list_2 = []
+    query_path_2 = '../data/qsd2_w1'
+    
+    for query_filename in sorted(os.listdir(query_path_2)):
+        if query_filename.endswith('_cut.jpg'):
+            image_id = int(query_filename.replace('.jpg', ''))
+            predicted_images = hist.get_k_images(os.path.join(query_path_2, query_filename),
+                                    bbdd_histograms, k, n_bins, distance, color_space)
+
+            print('{} most similar images: {}'.format(k, predicted_images))
+            print('----------------------')
+
+            predicted_images_list_2.append(predicted_images)
+            
+    print('*********************************************')
