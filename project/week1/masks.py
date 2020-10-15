@@ -182,8 +182,8 @@ def get_foreground(image_path,mask_path):
     Function to retrieve the masked image without background...
     """
     # load the input and mask images
-    image = cv.imread(image_path,0)
-    mask = cv.imread(mask_path,0)
+    image = cv.imread(image_path)
+    mask = cv.imread(mask_path)
     
     # combine the mask and the image
     masked = cv.bitwise_and(mask,image)

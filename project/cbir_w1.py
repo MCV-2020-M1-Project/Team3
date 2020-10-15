@@ -69,7 +69,7 @@ def run():
     
     for query_filename in sorted(os.listdir(query_path_2)):
         if query_filename.endswith('_cut.jpg'):
-            image_id = int(query_filename.replace('_cut.jpg', ''))
+            image_id = int(query_filename.split("_")[0])
             predicted_images = hist.get_k_images(os.path.join(query_path_2, query_filename),
                                     bbdd_histograms, k, n_bins, distance, color_space)
             print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images_2[image_id]))
