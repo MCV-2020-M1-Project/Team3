@@ -123,7 +123,7 @@ def compute_masks(images_path, method="M1", color_space="RGB"):
             elif method == "M3":
                 mask = get_mask_M3(os.path.join(images_path, image_filename))
 
-            cv.imwrite(os.path.join(images_path,image_filename.split(".")[0])+'_G3_' + method + '.png',mask)
+            cv.imwrite(os.path.join(images_path+'/results_'+method+'/'+image_filename.split(".")[0]+ '.png'),mask)
 
 def mask_evaluation(mask_path,groundtruth_path):
     """
@@ -150,7 +150,7 @@ def mask_evaluation(mask_path,groundtruth_path):
 
     return precision, recall, f1
 
-def mask_average_evaluation(masks_path, method="M1"):
+def mask_average_evaluation(masks_path,groundtruth_path, method="M1"):
     """
     mask_average_evaluation()
 
@@ -163,10 +163,10 @@ def mask_average_evaluation(masks_path, method="M1"):
     n_masks = 0
 
     for mask_filename in sorted(os.listdir(masks_path)):
-        if mask_filename.endswith('_G3_' + method + '.png'):
+        if mask_filename.endswith('.png'):
             precision, recall, f1 = mask_evaluation(os.path.join(masks_path, mask_filename),
-                                                        os.path.join(masks_path, mask_filename.split("_")[0]+'.png'))
-            print(" Mask #{} --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}".format(mask_filename.split("_")[0], precision, recall, f1))
+                                                        os.path.join(groundtruth_path, mask_filename.split(".")[0]+'.png'))
+            print(" Mask #{} --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}".format(mask_filename.split(".")[0], precision, recall, f1))
 
             avg_precision += precision
             avg_recall += recall
@@ -213,11 +213,11 @@ def compute_foregrounds(images_path,masks_path,method):
     for image_filename in sorted(os.listdir(images_path)):
         if image_filename.endswith('.jpg'):
             image_path = os.path.join(images_path, image_filename)
-            mask_path = os.path.join(masks_path,image_filename.split(".")[0]+'_G3_' + method + '.png')
+            mask_path = os.path.join(masks_path,image_filename.split(".")[0]+ '.png')
             
             foreground = get_foreground(image_path, mask_path)
 
-            cv.imwrite(os.path.join(images_path,image_filename.split(".")[0])+'_G3_' + method + '_cut.jpg',foreground)
+            cv.imwrite(os.path.join(masks_path,image_filename.split(".")[0])+ '.jpg',foreground)
             
             
             
