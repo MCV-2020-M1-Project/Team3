@@ -42,7 +42,7 @@ def run():
             predicted_images_list.append(predicted_images)
 
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_images_list, predicted_images_list, k)))
-
+    print('-----------------------------------')
 
     # Background removal main:
 
@@ -59,7 +59,7 @@ def run():
 
     print('-----------------------------------')
     print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
-
+    print('-----------------------------------')
 
     masks.compute_foregrounds(query_path_2,results_path, method)
 
