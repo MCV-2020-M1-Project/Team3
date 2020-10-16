@@ -10,5 +10,5 @@ source ./env/bin/activate
 
 pip install -r requirements.txt
 
-FOR WEEK 1
+<h4>FOR WEEK 1 /n</h4>
 In 'project' directory, run the command 'python main.py --week1' 
