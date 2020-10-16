@@ -9,3 +9,6 @@ source ./env/bin/activate
 - Install dependencies using pip
 
 pip install -r requirements.txt
+
+<h4>FOR WEEK 1</h4>
+In 'project' directory, run the command 'python main.py --week1' 
