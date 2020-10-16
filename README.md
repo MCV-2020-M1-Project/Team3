@@ -14,12 +14,12 @@ In 'project' directory, run the command 'python main.py --week1'
 
 Folders BBDD, qsd1_w1, qsd2_w1, qst1_w1 and qst2_w1 MUST be inside a folder named "data". Structure:
 
-│── project
-│   ├── week1
-│    ...
-└── data
-    ├── BBDD
-    ├── qsd1_w1
-    ├── qsd2_w1
-    ├── qst1_w1
-    └── qst2_w1
+- project
+    - week1
+    - ...
+- data
+    - BBDD
+    - qsd1_w1
+    - qsd2_w1
+    - qst1_w1
+    - qst2_w1
