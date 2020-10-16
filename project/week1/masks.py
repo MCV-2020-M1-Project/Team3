@@ -3,6 +3,49 @@ import imutils
 import cv2 as cv
 import numpy as np
 
+def get_mask_M0(image_path, color_space="RGB"):
+    """
+    get_mask_M1()
+
+    Function to compute a binary mask of the background using method 1...
+    """
+
+    # load the input image
+    image = cv.imread(image_path)
+
+    # Converting color space
+    if color_space == "RGB":
+        image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+
+    elif color_space == "HSV":
+        image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+
+    h,s,v = cv.split(image)
+
+    mask = cv.adaptiveThreshold(s, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                            cv.THRESH_BINARY, 51, 10)
+
+    mask = 255-mask
+
+    # Filling the holes with closing
+    dilatation_size = 1
+    element = cv.getStructuringElement(cv.MORPH_RECT, (2*dilatation_size+1, 2*dilatation_size+1),
+                                        (int(dilatation_size/2), int(dilatation_size/2)))
+    mask_open = cv.morphologyEx(mask, cv.MORPH_OPEN, element, iterations=3)
+
+    # Coordinates of non-black pixels.
+    coords = np.argwhere(mask_open)
+
+    # Bounding box of non-black pixels.
+    x0, y0 = coords.min(axis=0)
+    x1, y1 = coords.max(axis=0)
+
+    pnts = np.asarray([[y0,x0], [y0,x1], [y1,x1], [y1,x0]], dtype=np.int32)
+    final_mask = np.zeros(mask.shape)
+    cv.fillConvexPoly(final_mask, pnts, 255)
+
+    return final_mask
+
 def get_mask_M1(image_path, color_space="RGB"):
     """
     get_mask_M1()
@@ -114,7 +157,10 @@ def compute_masks(images_path, method="M1", color_space="RGB"):
     # for each query image, find the corresponding mask
     for image_filename in sorted(os.listdir(images_path)):
         if image_filename.endswith('.jpg'):
-            if method == "M1":
+            if method == "M0":
+                mask = get_mask_M0(os.path.join(images_path, image_filename), color_space=color_space)
+
+            elif method == "M1":
                 mask = get_mask_M1(os.path.join(images_path, image_filename), color_space=color_space)
 
             elif method == "M2":
@@ -184,22 +230,22 @@ def get_foreground(image_path,mask_path):
     # load the input and mask images
     image = cv.imread(image_path)
     mask = cv.imread(mask_path)
-    
+
     # combine the mask and the image
     masked = cv.bitwise_and(mask,image)
 
     # convert the masked image to grayscale
     gray = cv.cvtColor(masked,cv.COLOR_BGR2GRAY)
-    
+
     # Coordinates of non-black pixels.
     coords = np.argwhere(gray)
     # Bounding box of non-black pixels.
     x0, y0 = coords.min(axis=0)
     x1, y1 = coords.max(axis=0) + 1
-    
+
     # Get the contents of the bounding box.
     foreground = masked[x0:x1, y0:y1]
-    
+
     return foreground
 
 def compute_foregrounds(images_path,masks_path,method):
@@ -214,10 +260,7 @@ def compute_foregrounds(images_path,masks_path,method):
         if image_filename.endswith('.jpg'):
             image_path = os.path.join(images_path, image_filename)
             mask_path = os.path.join(masks_path,image_filename.split(".")[0]+ '.png')
-            
+
             foreground = get_foreground(image_path, mask_path)
 
             cv.imwrite(os.path.join(masks_path,image_filename.split(".")[0])+ '.jpg',foreground)
-            
-            
-            
