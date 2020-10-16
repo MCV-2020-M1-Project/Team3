@@ -1,6 +1,6 @@
 import sys
 
-import cbir_w1 as w1
+from week1 import run_w1 as w1
 
 if __name__=="__main__":
 

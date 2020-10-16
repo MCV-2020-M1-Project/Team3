@@ -8,8 +8,8 @@ from week1 import masks
 def run():
     print('*********************************************')
 
-    bbdd_path = '../data/BBDD'
-    query_path = '../data/qsd1_w1'
+    bbdd_path = '../../data/BBDD'
+    query_path = '../../data/qsd1_w1'
 
     # load groundtruth images of the query dataset
     groundtruth_images = pickle.load(open(os.path.join(query_path, "gt_corresps.pkl"), 'rb'))
