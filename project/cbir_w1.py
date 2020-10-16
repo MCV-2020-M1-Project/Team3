@@ -3,7 +3,7 @@ import os
 import ml_metrics as mlm
 
 from week1 import histogram as hist
-from week1 import masks 
+from week1 import masks
 
 def run():
     print('*********************************************')
@@ -51,29 +51,29 @@ def run():
     # Background removal main:
 
     query_path_2 = '../data/qsd2_w1'
-    method = "M2"
-    color_space = "HSV"
+    method = "M0"
+    # color_space = "RGB"
 
     masks.compute_masks(query_path_2, method, color_space)
-    
+
     # the calculated masks and foregrounds will be save in 'data/qsd2_w1/results_Mx/'
     results_path = os.path.join(query_path_2+'/results_'+method+'/')
-    
+
     avg_precision, avg_recall, avg_f1 = masks.mask_average_evaluation(results_path,query_path_2, method)
 
     print('-----------------------------------')
     print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
-    
+    print('-----------------------------------')
 
     masks.compute_foregrounds(query_path_2,results_path, method)
 
 
     predicted_images_list_2 = []
     groundtruth_images_list_2 = []
-    
+
     # load groundtruth images of the query dataset
     groundtruth_images_2 = pickle.load(open(os.path.join(query_path_2, "gt_corresps.pkl"), 'rb'))
-    
+
     # find the k most similar for the foreground
     for query_filename in sorted(os.listdir(results_path)):
         if query_filename.endswith('.jpg'):
@@ -81,7 +81,7 @@ def run():
             predicted_images_2 = hist.get_k_images(os.path.join(results_path, query_filename),
                                     bbdd_histograms, k, n_bins, distance, color_space)
             print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images_2[image_id]))
-            print('{} most similar images: {}'.format(k, predicted_images))
+            print('{} most similar images: {}'.format(k, predicted_images_2))
             print('----------------------')
 
             groundtruth_images_list_2.append(groundtruth_images_2[image_id])
