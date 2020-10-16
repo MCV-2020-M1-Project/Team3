@@ -2,8 +2,8 @@ import pickle
 import os
 import ml_metrics as mlm
 
-from week1 import histogram as hist
-from week1 import masks
+import histogram as hist
+import masks
 
 def run():
     print('*********************************************')
@@ -50,7 +50,7 @@ def run():
 
     # Background removal main:
 
-    query_path_2 = '../data/qsd2_w1'
+    query_path_2 = '../../data/qsd2_w1'
     method = "M0"
     # color_space = "RGB"
 
