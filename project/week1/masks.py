@@ -3,43 +3,40 @@ import imutils
 import cv2 as cv
 import numpy as np
 
-def get_mask_M0(image_path, color_space="RGB"):
+def get_mask_M0(image_path):
     """
-    get_mask_M1()
+    get_mask_M0()
 
-    Function to compute a binary mask of the background using method 1...
+    Function to compute a binary mask of the background using method 0...
     """
 
     # load the input image
     image = cv.imread(image_path)
+    image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
 
-    # Converting color space
-    if color_space == "RGB":
-        image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+    h,s,v = cv.split(image_hsv)
 
-    elif color_space == "HSV":
-        image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-
-    h,s,v = cv.split(image)
-
+    # 0s --> contours
     mask = cv.adaptiveThreshold(s, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
                                             cv.THRESH_BINARY, 51, 10)
 
+    # 1s --> contours
     mask = 255-mask
 
-    # Filling the holes with closing
+    # Denoising with "opening" morphology operator
     dilatation_size = 1
     element = cv.getStructuringElement(cv.MORPH_RECT, (2*dilatation_size+1, 2*dilatation_size+1),
                                         (int(dilatation_size/2), int(dilatation_size/2)))
     mask_open = cv.morphologyEx(mask, cv.MORPH_OPEN, element, iterations=3)
 
-    # Coordinates of non-black pixels.
+    # Coordinates of non-black pixels (picture contours)
     coords = np.argwhere(mask_open)
 
-    # Bounding box of non-black pixels.
+    # First and last non-black pixel
     x0, y0 = coords.min(axis=0)
     x1, y1 = coords.max(axis=0)
 
+    # Bounding box of non-black pixels
     pnts = np.asarray([[y0,x0], [y0,x1], [y1,x1], [y1,x0]], dtype=np.int32)
     final_mask = np.zeros(mask.shape)
     cv.fillConvexPoly(final_mask, pnts, 255)
@@ -85,14 +82,6 @@ def get_mask_M2(image_path, color_space="RGB"):
     element = cv.getStructuringElement(cv.MORPH_RECT, (2*dilatation_size+1, 2*dilatation_size+1),
                                         (int(dilatation_size/2), int(dilatation_size/2)))
     mask_closed = cv.morphologyEx(mask, cv.MORPH_CLOSE, element, iterations=9)
-
-    # # Filling the holes with imfill flood filling
-    # mask_flood = mask.copy()
-    # h, w = mask_flood.shape[:2]
-    # fill_mask = np.zeros((h+2,w+2), np.uint8)
-    #
-    # # Filling from the central seed. Might try different seeds
-    # cv.floodFill(mask_flood,fill_mask,(h//2,w//2),255)
 
     return mask_closed
 
@@ -158,7 +147,7 @@ def compute_masks(images_path, method="M1", color_space="RGB"):
     for image_filename in sorted(os.listdir(images_path)):
         if image_filename.endswith('.jpg'):
             if method == "M0":
-                mask = get_mask_M0(os.path.join(images_path, image_filename), color_space=color_space)
+                mask = get_mask_M0(os.path.join(images_path, image_filename))
 
             elif method == "M1":
                 mask = get_mask_M1(os.path.join(images_path, image_filename), color_space=color_space)

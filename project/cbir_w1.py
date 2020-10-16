@@ -18,7 +18,7 @@ def run():
     k = 5
     n_bins = 8
     distance = "Hellinger"
-    color_space = "HSV"
+    color_space = "RGB"
 
     print("Computing bbdd histograms...", end=' ', flush=True)
     bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, n_bins, color_space)
