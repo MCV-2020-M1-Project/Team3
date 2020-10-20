@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 def euclidean_distance(hist_A, hist_B):
     d = np.sum([(a - b) ** 2
