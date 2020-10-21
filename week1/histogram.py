@@ -53,8 +53,8 @@ def compute_histogram_blocks(image_path, n_bins, color_space="RGB", rows=1,cols=
     sizeX = img.shape[1]
     sizeY = img.shape[0]
 
+    hist_row = None
     hist_concat = None
-    hist_arr = []
 
     for i in range(0,rows):
         for j in range(0, cols):
@@ -72,17 +72,18 @@ def compute_histogram_blocks(image_path, n_bins, color_space="RGB", rows=1,cols=
             hist = cv.normalize(hist, hist, alpha=0, beta=1,
                                 norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
 
-            hist_arr.append(hist)
+            if hist_row is None:
+                hist_row = hist
+            else:
+                hist_row = cv.hconcat([hist_row, hist])
+        
+        if hist_concat is None:
+            hist_concat = hist_row
+        else:
+            hist_concat = cv.vconcat([hist_concat, hist_row])
+        
+        hist_row = None
 
-
-    if len(hist_arr)==1:
-        return hist_arr[0]
-    else:
-        hist_concat = hist_arr[0]
-        cv.add(hist_concat, hist_arr[1], hist_concat)
-
-    for histo in hist_arr[2:]:
-        cv.add(hist_concat, histo, hist_concat)
     
     return hist_concat
 
