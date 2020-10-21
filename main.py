@@ -9,4 +9,8 @@ if __name__=="__main__":
         w1.run()
 
     if "--week2" in sys.argv:
-        w2_1.run()
+        if len(sys.argv)>2:
+            rows = cols = int(sys.argv[2])
+            w2_1.run(rows=rows, cols=cols)
+        else:
+            w2_1.run()
