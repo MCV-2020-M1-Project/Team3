@@ -89,7 +89,7 @@ def compute_histogram_blocks(image_path, n_bins, color_space="RGB", rows=1,cols=
     
     return hist_concat
 
-def compute_histogram_blocks_no_boxes(image_path, boxes_path,n_bins, color_space="RGB", rows=1,cols=1):
+def compute_histogram_blocks_boxes(image_path, boxes_path,n_bins, color_space="RGB", rows=1,cols=1):
     """
     compute_histogram_blocks()
 
@@ -130,11 +130,10 @@ def compute_histogram_blocks_no_boxes(image_path, boxes_path,n_bins, color_space
 
             result_vector = np.asarray(result_vector)
             
-            hist=[0]*n_bins
+            hist=np.zeros(n_bins**n_channels,dtype=np.float32)
             
             if result_vector.size!=0:
                 result_matrix = np.reshape(result_vector,(result_vector.shape[0],1,-1))
-                print("I'm in {}".format(image_id))
                 hist_channels = list(range(n_channels))
                 hist_bins = [n_bins,]*n_channels
                 hist_range = [0, 256]*n_channels
@@ -143,9 +142,8 @@ def compute_histogram_blocks_no_boxes(image_path, boxes_path,n_bins, color_space
                                 hist_range)
                 hist = cv.normalize(hist, hist, alpha=0, beta=1,
                                     norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
-            
-                
-            
+           
+                            
             if hist_row is None:
                 hist_row = hist
             else:
@@ -187,10 +185,10 @@ def get_k_images(qsd1_image_path, bbdd_histograms, k="10", n_bins=8, distance_me
     k_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
     return [bbdd_img[0] for bbdd_img in k_images]
 
-def get_k_images_no_boxes(qsd1_image_path,boxes_path, bbdd_histograms, k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", rows=1, cols=1):
+def get_k_images_boxes(qsd1_image_path,boxes_path, bbdd_histograms, k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", rows=1, cols=1):
     reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
-    qsd1_hist = compute_histogram_blocks_no_boxes(qsd1_image_path, boxes_path, n_bins, color_space, rows, cols)
+    qsd1_hist = compute_histogram_blocks_boxes(qsd1_image_path, boxes_path, n_bins, color_space, rows, cols)
     distances = {}
     
     for bbdd_id, bbdd_hist in bbdd_histograms.items():

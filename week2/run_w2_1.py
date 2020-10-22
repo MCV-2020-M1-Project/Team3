@@ -9,7 +9,7 @@ def run(rows=4, cols=4):
     print('*********************************************')
 
     bbdd_path = '../data/BBDD'
-    query_path = '../data/qsd1_w1'
+    query_path = '../data/qsd1_w2'
 
     # load groundtruth images of the query dataset
     groundtruth_images = pickle.load(open(os.path.join(query_path, "gt_corresps.pkl"), 'rb'))
