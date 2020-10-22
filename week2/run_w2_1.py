@@ -5,7 +5,7 @@ import ml_metrics as mlm
 import week1.histogram as hist
 import week1.masks as masks
 
-def run():
+def run(rows=4, cols=4):
     print('*********************************************')
 
     bbdd_path = '../data/BBDD'
@@ -21,7 +21,7 @@ def run():
     color_space = "RGB"
 
     print("Computing bbdd histograms...", end=' ', flush=True)
-    bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, n_bins, color_space)
+    bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, n_bins, color_space, rows=rows, cols=cols)
     print("Done!")
     print('----------------------')
 
@@ -32,7 +32,7 @@ def run():
         if query_filename.endswith('.jpg'):
             image_id = int(query_filename.replace('.jpg', ''))
             predicted_images = hist.get_k_images(os.path.join(query_path, query_filename),
-                                    bbdd_histograms, k, n_bins, distance, color_space)
+                                    bbdd_histograms, k, n_bins, distance, color_space, rows=rows, cols=cols)
 
             print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images[image_id]))
             print('{} most similar images: {}'.format(k, predicted_images))
@@ -79,7 +79,7 @@ def run():
         if query_filename.endswith('.jpg'):
             image_id = int(query_filename.split(".")[0])
             predicted_images_2 = hist.get_k_images(os.path.join(results_path, query_filename),
-                                    bbdd_histograms, k, n_bins, distance, color_space)
+                                    bbdd_histograms, k, n_bins, distance, color_space, rows=rows, cols=cols)
             print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images_2[image_id]))
             print('{} most similar images: {}'.format(k, predicted_images_2))
             print('----------------------')
