@@ -2,8 +2,8 @@ import pickle
 import os
 import ml_metrics as mlm
 
-import histogram as hist
-import masks
+from week1 import histogram as hist
+from week1 import masks
 
 def run():
     print('*********************************************')
