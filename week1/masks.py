@@ -50,8 +50,8 @@ def detect_text_box(img):
                 # ROI = img[y:y+h, x:x+w]
                 # cv.imwrite('ROI_{}.png'.format(ROI_number), ROI)
                 ROI_number += 1
-            else:
-                break# Algorithm to detect bounding box in an image...
+        else:
+            break# Algorithm to detect bounding box in an image...
 
 
     return [tlx, tly, brx, bry]
