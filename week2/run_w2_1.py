@@ -152,3 +152,4 @@ def run():
         print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
         print('**********************')
     print('---------------------------------------------')
+run()

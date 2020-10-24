@@ -5,12 +5,54 @@ import numpy as np
 
 import week1.bg_removal_methods as methods
 
-def detect_text_box(image):
-    # Algorithm to detect bounding box in an image...
+def detect_text_box(img):
+    g = img.copy()
+    g[:,:,0] = g[:,:,2] = 0
+    
+    gray_g = cv.cvtColor(g, cv.COLOR_BGR2GRAY) 
+    gbw = cv.adaptiveThreshold(gray_g,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV,11,30)
+    
+    # Getting the kernel to be used in Gradient
+    filterSize =(9, 3) 
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, filterSize) 
+    
+    
+    gradient_g = cv.morphologyEx(gbw, cv.MORPH_GRADIENT, kernel)
+    
+    kernel = cv.getStructuringElement(cv.MORPH_CROSS, (60,15)) 
+    close_g = cv.morphologyEx(gbw, cv.MORPH_CLOSE, kernel, iterations=3)
+    
+    
+    experiment = cv.bitwise_and(gradient_g,close_g)
+    grad_closed =cv.morphologyEx(experiment, cv.MORPH_CLOSE, kernel, iterations=3)
+    
+    
+    # # Find contours, highlight text areas, and extract ROIs
+    cnts = cv.findContours(grad_closed, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    
+    ROI_number = 0
     tlx = 0
     tly = 0
     brx = 0
     bry = 0
+    for c in cnts:
+        if ROI_number !=1:
+            area = cv.contourArea(c)
+            if area > 1000:
+                x,y,w,h = cv.boundingRect(c)
+                cv.rectangle(img, (x, y), (x + w, y + h), (36,255,12), 3)
+                # print("tl:", [x,y]," br: ", [x + w, y + h])
+                tlx = x
+                tly = y
+                brx = x + w
+                bry = y + h
+                # ROI = img[y:y+h, x:x+w]
+                # cv.imwrite('ROI_{}.png'.format(ROI_number), ROI)
+                ROI_number += 1
+            else:
+                break# Algorithm to detect bounding box in an image...
+
 
     return [tlx, tly, brx, bry]
 
