@@ -32,6 +32,8 @@ def box_iou(boxA, boxB):
 
 def mean_iou(gt_boxes_path, pred_boxes_path):
 
+    # image = cv.imread('/home/oscar/workspace/master/modules/m1/project/Team3/data/qsd1_w2/00005.jpg')
+
     all_gt_boxes = pickle.load(open(gt_boxes_path, 'rb'))
     all_pred_boxes = pickle.load(open(pred_boxes_path, 'rb'))
 
