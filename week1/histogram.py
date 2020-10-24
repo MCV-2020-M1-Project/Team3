@@ -54,8 +54,10 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
     # boxes = pickle.load(open(os.path.join(boxes_path), 'rb'))[image_id][0]
 
     if text_box:
-        tl = text_box[0] # change to our format results
-        br = text_box[2] # change to our format results
+        tlx_init = text_box[0]
+        tly_init = text_box[1]
+        brx_init = text_box[2]
+        bry_init = text_box[3]
 
     sizeX = image.shape[1]
     sizeY = image.shape[0]
@@ -72,17 +74,21 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
 
             # If there's a text bounding box ignore the pixels inside it
             else:
-                tl_x = tl[0]-int(j*sizeX/block_size)
-                tl_y = tl[1]-int(i*sizeY/block_size)
-                br_x = br[0]-int(j*sizeX/block_size)
-                br_y = br[1]-int(i*sizeY/block_size)
+                tlx = tlx_init-int(j*sizeX/block_size)
+                tly = tly_init-int(i*sizeY/block_size)
+                brx = brx_init-int(j*sizeX/block_size)
+                bry = bry_init-int(i*sizeY/block_size)
 
                 img_cell_vector = []
 
                 for x in range(img_cell.shape[1]-1):
                     for y in range(img_cell.shape[0]-1):
-                        if not (tl_x<x<br_x and  tl_y<y<br_y):
+                        if not (tlx < x < brx and  tly < y < bry):
                             img_cell_vector.append(img_cell[y,x,:])
+
+                            # img_cell[y,x][0] = 255
+                            # img_cell[y,x][1] = 0
+                            # img_cell[y,x][2] = 0
 
                 img_cell_vector = np.asarray(img_cell_vector)
 
@@ -93,6 +99,9 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
                 if img_cell_vector.size!=0:
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
                     hist = compute_histogram(img_cell_matrix, n_bins, color_space)
+
+                    # cv.imshow("img_cell", img_cell)
+                    # cv.waitKey()
 
             if hist_concat is None:
                 hist_concat = hist

@@ -6,6 +6,7 @@ import cv2 as cv
 import week1.histogram as hist
 import week1.masks as masks
 import week1.evaluation as evaluation
+import week1.bg_removal_methods as bg
 
 def run():
     print('---------------------------------------------')
@@ -29,7 +30,7 @@ def run():
 
     # Flags to select algorithms
     bg_removal = False
-    text_detection = True
+    text_detection = False
 
     # Test mode
     test = False
@@ -78,12 +79,12 @@ def run():
 
                 # Computes the background mask and returns the number of paintings in the image.
                 # It also saves the background mask in the results path
-                num_paintings = masks.compute_bg_mask(image_path, bg_mask_path, method, color_space)
+                idx = masks.compute_bg_mask(image_path, bg_mask_path, method, color_space)
 
-                for idx in range(num_paintings):
+                for painting_coords in range(idx):
                     # Gets the foreground image (painting). We pass the "idx" argument to define which painting we want.
                     # It also saves the foreground image in the results path
-                    fg_image = masks.compute_fg(image_path, bg_mask_path, idx, os.path.join(bg_results_path, query_filename))
+                    fg_image = masks.compute_fg(image_path, bg_mask_path, painting_coords, os.path.join(bg_results_path, query_filename))
                     paintings.append(fg_image)
 
             # If we don't need to remove the background --> painting = image
@@ -102,12 +103,12 @@ def run():
                     # Format of text_boxes_image: [[tlx1, tly1, brx1, bry1], [tlx2, tly2, brx2, bry2]]
                     text_boxes_image.append([tlx, tly, brx, bry])
 
-                    # Retrieves the k most similar images ignoring text bounding boxes
+                    # # Retrieves the k most similar images ignoring text bounding boxes
                     predicted_images = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
                                                     k, n_bins, distance, color_space, block_size)
 
                 else:
-                    # Retrieves the k most similar images
+                    # # Retrieves the k most similar images
                     predicted_images = hist.get_k_images(painting, bbdd_histograms, None,
                                                     k, n_bins, distance, color_space, block_size)
 
