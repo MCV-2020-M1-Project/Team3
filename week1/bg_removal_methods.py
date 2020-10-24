@@ -202,3 +202,61 @@ def get_mask_M4(image):
     # cv.fillConvexPoly()
 
     return mask
+
+def get_mask_M5(image):
+    
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    
+   
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5)) #or RECT or CROSS
+    grad = cv.morphologyEx(gray, cv.MORPH_GRADIENT, kernel)
+    
+    _, bw = cv.threshold(grad, 0.0, 255.0, cv.THRESH_BINARY | cv.THRESH_OTSU)
+    
+    
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (25, 10)) #might work tunning that
+    morphy = cv.morphologyEx(bw,cv.MORPH_GRADIENT,kernel)
+    
+    # using RETR_EXTERNAL instead of RETR_CCOMP
+    contours, hierarchy = cv.findContours(morphy.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    
+    mask = np.zeros(bw.shape, dtype=np.uint8)
+    
+    final_contours = []
+    
+    found = False
+    
+    for idx in range(len(contours)):
+        x, y, w, h = cv.boundingRect(contours[idx])
+        mask[y:y+h, x:x+w] = 0
+        cv.drawContours(mask, contours, idx, (255, 255, 255), -1)
+        r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
+    
+        if r > 0.35 and w > gray.shape[1]/8 and h > gray.shape[0]/8:
+            final_contours.append([x,y,w,h])
+            cv.rectangle(image, (x, y), (x+w-1, y+h-1), (0, 255, 0), 2)
+    
+            found = True
+
+    mask = np.zeros(gray.shape)
+    for box_coords in final_contours:
+        x0 = box_coords[0]
+        y0 = box_coords[1]
+        x1 = box_coords[0] + box_coords[2]
+        y1 = box_coords[1] + box_coords[3]
+    
+        pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
+        cv.fillConvexPoly(mask, pnts, 255)
+
+    
+    if not found:
+        mask = get_mask_M0(image)
+    
+    # cv.imshow('gray', gray)
+    # cv.imshow('morphy', morphy)
+    # cv.imshow('bw', bw)
+    # cv.imshow('image', image)
+    # cv.imshow('mask', mask)
+    # cv.waitKey(0)
+    
+    return mask

@@ -43,7 +43,7 @@ def run():
 
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_images_list, predicted_images_list, k)))
     
-    results_filename = query_path+'/results.pkl'
+    results_filename = query_path+'/result.pkl'
     outfile = open(results_filename,'wb')
     pickle.dump(predicted_images_list,outfile)
     outfile.close()
@@ -89,7 +89,7 @@ def run():
             
     print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_images_list_2, predicted_images_list_2, k))) 
 
-    results_filename_2 = results_path+'results.pkl'
+    results_filename_2 = results_path+'result.pkl'
     outfile_2 = open(results_filename_2,'wb')
     pickle.dump(predicted_images_list_2,outfile_2)
     outfile_2.close()            
