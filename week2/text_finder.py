@@ -9,10 +9,6 @@ def get_mask(image_path):
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
     img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-    blur = cv.GaussianBlur(img_gray, (5, 5), 0)
-    dilate = cv.morphologyEx(blur, cv.MORPH_DILATE, kernel)
-    op = cv.morphologyEx(dilate, cv.MORPH_OPEN, kernel)
-
     th = cv.morphologyEx(img_gray, cv.MORPH_TOPHAT, kernel)
     dilate = cv.morphologyEx(th, cv.MORPH_DILATE, kernel)
     close = cv.morphologyEx(dilate, cv.MORPH_CLOSE, kernel)
