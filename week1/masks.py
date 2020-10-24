@@ -3,7 +3,7 @@ import imutils
 import cv2 as cv
 import numpy as np
 
-from week1 import bg_removal_methods as methods
+import week1.bg_removal_methods as methods
 
 def detect_text_box(image):
     # Algorithm to detect bounding box in an image...
@@ -111,6 +111,9 @@ def compute_bg_mask(image_path, bg_mask_path, method="M0", color_space="RGB"):
 
     elif method == "M3":
         mask = methods.get_mask_M3(image)
+
+    elif method == "M4":
+        mask = methods.get_mask_M4(image)
 
     # Save background mask
     cv.imwrite(bg_mask_path, mask)

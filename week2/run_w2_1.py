@@ -5,13 +5,14 @@ import cv2 as cv
 
 import week1.histogram as hist
 import week1.masks as masks
+import week1.evaluation as evaluation
 
 def run():
     print('---------------------------------------------')
 
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
-    query_path = 'data/qsd2_w2'
+    query_path = 'data/qsd1_w2'
     results_path = os.path.join(query_path, 'results')
 
     # If folder data/qsdX_wX/results doesn't exist -> create it
@@ -24,11 +25,11 @@ def run():
     k = 5 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
     block_size = 16 # Block-based histogram
-    method = "M0" # Method to perform background removal
+    method = "M4" # Method to perform background removal
 
     # Flags to select algorithms
-    bg_removal = True
-    text_detection = False
+    bg_removal = False
+    text_detection = True
 
     # Test mode
     test = False
@@ -40,7 +41,7 @@ def run():
             os.makedirs(bg_results_path)
 
     if text_detection:
-        groundtruth_text_boxes = pickle.load(open(os.path.join(query_path, 'text_boxes.pkl'), 'rb'))
+        groundtruth_text_boxes_path = os.path.join(query_path, 'text_boxes.pkl')
 
     if not test:
         # Load groundtruth images of the query dataset
@@ -97,11 +98,11 @@ def run():
 
                 # If we need to detect the text bounding box of the painting
                 if text_detection:
-                    [tlx, tly, brx, bry] = masks.detect_text_box(fg_image)
+                    [tlx, tly, brx, bry] = masks.detect_text_box(painting)
                     # Format of text_boxes_image: [[tlx1, tly1, brx1, bry1], [tlx2, tly2, brx2, bry2]]
                     text_boxes_image.append([tlx, tly, brx, bry])
 
-                    Retrieves the k most similar images ignoring text bounding boxes
+                    # Retrieves the k most similar images ignoring text bounding boxes
                     predicted_images = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
                                                     k, n_bins, distance, color_space, block_size)
 
@@ -114,9 +115,6 @@ def run():
 
             # Format of text_boxes: [[[tlx1, tly1, brx1, bry1], [tlx2, tly2, brx2, bry2]], [[tlx1, tly1, brx1, bry1]] ...]
             text_boxes.append(text_boxes_image)
-
-            print(text_boxes_image)
-            print(text_boxes)
 
             if not test:
                 print('Image: {}, Groundtruth: {}'.format(query_filename, groundtruth_images[image_id]))
@@ -134,16 +132,16 @@ def run():
     predicted_images_outfile.close()
 
     if text_detection:
-        text_boxes_path = os.path.join(results_path, 'text_boxes.pkl')
-        text_boxes_outfile = open(text_boxes_path,'wb')
-        pickle.dump(text_boxes, text_boxes_outfile)
-        text_boxes_outfile.close()
+        predicted_text_boxes_path = os.path.join(results_path, 'text_boxes.pkl')
+        predicted_text_boxes_outfile = open(predicted_text_boxes_path,'wb')
+        pickle.dump(text_boxes, predicted_text_boxes_outfile)
+        predicted_text_boxes_outfile.close()
 
         # Text bounding boxes evaluation
         if not test:
-            # mean_iou = evaluation.mean_iou(os.path.join(query_path, 'text_boxes.pkl'), text_boxes_path)
+            mean_iou = evaluation.mean_iou(groundtruth_text_boxes_path, predicted_text_boxes_path)
             print('**********************')
-            # print('Text bounding boxes evaluation: Mean IOU = {}'.format(mean_iou))
+            print('Text bounding boxes evaluation: Mean IOU = {}'.format(mean_iou))
             print('**********************')
 
     # Background removal evaluation
