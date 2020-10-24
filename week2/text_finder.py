@@ -12,8 +12,8 @@ def get_mask(image_path):
     th = cv.morphologyEx(img_gray, cv.MORPH_TOPHAT, kernel)
     dilate = cv.morphologyEx(th, cv.MORPH_DILATE, kernel)
     close = cv.morphologyEx(dilate, cv.MORPH_CLOSE, kernel)
-
-    img_thr = cv.adaptiveThreshold(close, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, 10)
+    grad = cv.morphologyEx(close, cv.MORPH_GRADIENT, kernel)
+    otsu, img_thr = cv.threshold(grad, 0, 255, cv.THRESH_OTSU,)
 
     #close = cv.morphologyEx(img_gray, cv.MORPH_CLOSE, kernel)
     #dilate = cv.morphologyEx(close, cv.MORPH_DILATE, kernel)
