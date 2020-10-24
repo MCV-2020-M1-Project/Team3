@@ -8,8 +8,8 @@ import week1.masks as masks
 def run(rows=4, cols=4):
     print('*********************************************')
 
-    bbdd_path = '../data/BBDD'
-    query_path = '../data/qsd1_w1'
+    bbdd_path = 'D:\MCV\M1\Project\BBDD'
+    query_path = 'D:\MCV\M1\Project\qsd1_w1'
 
     # load groundtruth images of the query dataset
     groundtruth_images = pickle.load(open(os.path.join(query_path, "gt_corresps.pkl"), 'rb'))
@@ -50,7 +50,7 @@ def run(rows=4, cols=4):
 
     # Background removal main:
 
-    query_path_2 = '../data/qsd2_w1'
+    query_path_2 = 'D:\MCV\M1\Project\qsd2_w1'
     method = "M0"
     # color_space = "RGB"
 
