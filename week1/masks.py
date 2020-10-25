@@ -19,7 +19,7 @@ def detect_text_box2(img):
 
     gradient_g = cv.morphologyEx(gbw, cv.MORPH_GRADIENT, kernel)
 
-    kernel = cv.getStructuringElement(cv.MORPH_CROSS, (60,15))
+    kernel = cv.getStructuringElement(cv.MORPH_CROSS, (30,15))
     close_g = cv.morphologyEx(gbw, cv.MORPH_CLOSE, kernel, iterations=3)
 
 
@@ -36,28 +36,58 @@ def detect_text_box2(img):
     tly = 0
     brx = 0
     bry = 0
-    for c in cnts:
-        if ROI_number !=1:
-            area = cv.contourArea(c)
-            if area > 1000:
-                x,y,w,h = cv.boundingRect(c)
-                cv.rectangle(img, (x, y), (x + w, y + h), (36,255,12), 3)
-                # print("tl:", [x,y]," br: ", [x + w, y + h])
-                tlx = x
-                tly = y
-                brx = x + w
-                bry = y + h
-                # ROI = img[y:y+h, x:x+w]
-                # cv.imwrite('ROI_{}.png'.format(ROI_number), ROI)
-                ROI_number += 1
-        else:
-            break# Algorithm to detect bounding box in an image...
 
+    # for idx,c in enumerate(cnts):
+    #     if ROI_number !=1:
+    #         area = cv.contourArea(c)
+    #         # if area > 1000:
+    #         x,y,w,h = cv.boundingRect(c)
+    #         mask[y:y+h, x:x+w] = 0
+    #         cv.drawContours(mask, cnts, idx, (255, 255, 255), -1)
+    #         r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
+    #
+    #         if r > 0.45 and w > img.shape[1]/8 and h > img.shape[0]/40 and w>h and w*h< (img.shape[0]*img.shape[1])*0.6:
+    #             cv.rectangle(img, (x, y), (x + w, y + h), (36,255,12), 3)
+    #             # print("tl:", [x,y]," br: ", [x + w, y + h])
+    #             tlx = x
+    #             tly = y
+    #             brx = x + w
+    #             bry = y + h
+    #             # ROI = img[y:y+h, x:x+w]
+    #             # cv.imwrite('ROI_{}.png'.format(ROI_number), ROI)
+    #             ROI_number += 1
+    #     else:
+    #         break# Algorithm to detect bounding box in an image...
 
-    return [tlx, tly, brx, bry]
+    mask = np.zeros([img.shape[0], img.shape[1]], dtype=np.uint8)
+
+    final_contours_aux = []
+
+    for idx in range(len(cnts)):
+        x, y, w, h = cv.boundingRect(cnts[idx])
+        mask[y:y+h, x:x+w] = 0
+        cv.drawContours(mask, cnts, idx, (255, 255, 255), -1)
+        r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
+
+        if r > 0.25 and w > 2*h and w*h < (img.shape[0]*img.shape[1])*0.4 and w < img.shape[1]*0.95:
+            final_contours_aux.append([x,y,w,h])
+
+    final_contours = []
+
+    if len(final_contours_aux) > 0:
+        max_area = 0
+        max_area_idx = 0
+        for idx, cnt in enumerate(final_contours_aux):
+            if cnt[2]*cnt[3] > max_area:
+                max_area = cnt[2]*cnt[3]
+                max_area_idx = idx
+        final_contours.append(final_contours_aux[max_area_idx])
+    # else:
+
+    return [final_contours[0][0], final_contours[0][1], final_contours[0][2], final_contours[0][3]]
 
 def detect_text_box1(image, img_v):
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, (7,7))
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (15,7))
     img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
     th = cv.morphologyEx(img_gray, cv.MORPH_TOPHAT, kernel)
@@ -79,7 +109,7 @@ def detect_text_box1(image, img_v):
         cv.drawContours(mask, contours, idx, (255, 255, 255), -1)
         r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
 
-        if r > 0.45 and w > img_v.shape[1]/8 and h > img_v.shape[0]/40 and w > h and w*h < (img_v.shape[0]*img_v.shape[1])*0.8:
+        if r > 0.25 and w > img_v.shape[1]/4 and h > img_v.shape[0]/40 and w < img_v.shape[1]*0.95 and h < img_v.shape[0]*0.25 and w > 2*h and w*h < (img_v.shape[0]*img_v.shape[1])*0.4:
             final_contours_aux.append([x,y,w,h])
 
     final_contours = []
@@ -94,8 +124,7 @@ def detect_text_box1(image, img_v):
 
         final_contours.append(final_contours_aux[max_area_idx])
     else:
-        [a,b,c,d] = detect_text_box2(image)
-        final_contours.append([a,b,c-a,d-b])
+        final_contours.append(detect_text_box2(image))
 
     return [final_contours[0][0], final_contours[0][1], final_contours[0][2], final_contours[0][3]]
 
@@ -125,7 +154,7 @@ def detect_text_box(image):
         cv.drawContours(mask, contours, idx, (255, 255, 255), -1)
         r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
 
-        if r > 0.45 and w > contours_img_v.shape[1]/8 and h > contours_img_v.shape[0]/40 and w > h and w*h < (contours_img_v.shape[0]*contours_img_v.shape[1])*0.8:
+        if r > 0.25 and w > contours_img_v.shape[1]/4 and h > contours_img_v.shape[0]/40 and w < contours_img_v.shape[1]*0.95 and h < contours_img_v.shape[0]*0.25 and w > 2*h and w*h < (contours_img_v.shape[0]*contours_img_v.shape[1])*0.4:
             final_contours_aux.append([x,y,w,h])
 
     final_contours = []
@@ -144,27 +173,21 @@ def detect_text_box(image):
 
     cv.rectangle(image, (final_contours[0][0], final_contours[0][1]), (final_contours[0][0]+final_contours[0][2]-1, final_contours[0][1]+final_contours[0][3]-1), (0, 255, 0), 2)
 
-    # cv.imshow('small', small)
-    mask = np.zeros(contours_img_v.shape)
-    for box_coords in final_contours:
-        x0 = box_coords[0]
-        y0 = box_coords[1]
-        x1 = box_coords[0] + box_coords[2]
-        y1 = box_coords[1] + box_coords[3]
+    # mask = np.zeros(contours_img_v.shape)
+    # for box_coords in final_contours:
+    #     x0 = box_coords[0]
+    #     y0 = box_coords[1]
+    #     x1 = box_coords[0] + box_coords[2]
+    #     y1 = box_coords[1] + box_coords[3]
 
-        pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
-        cv.fillConvexPoly(mask, pnts, 255)
-
-    # cv.imshow('small', small)
-    # cv.waitKey(0)
-    # # # cv.imshow('grad', grad)
-    # # # cv.waitKey(0)
+        # pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
+        # cv.fillConvexPoly(mask, pnts, 255)
+#
+    # cv.imshow('image', image)
+    # cv.imshow('img_v', img_v)
+    # cv.imshow('contours_img_v', contours_img_v)
     # cv.imshow('bw', bw)
-    # cv.waitKey(0)
-    # # cv.imshow('connected', connected)
-    # # cv.waitKey(0)
-    # cv.imshow('connected2', connected2)
-    # cv.waitKey(0)
+    # cv.imshow('connected', connected)
     # cv.imshow('rects', image)
     # cv.waitKey(0)
 
@@ -222,15 +245,25 @@ def mask_average_evaluation(masks_path, groundtruth_path):
 
     return avg_precision/n_masks, avg_recall/n_masks, avg_f1/n_masks
 
-def compute_fg(image_path, bg_mask_path, painting_id, bg_results_path):
+def compute_fg(image_path, bg_mask_path, painting_coords, bg_results_path):
     """
     compute_fg()
 
     Function to compute the foreground of an image using the background mask ...
     """
 
+    # Coordinates of the painting
+    tlx = painting_coords[0]
+    tly = painting_coords[1]
+    brx = painting_coords[2]
+    bry = painting_coords[3]
+
+    bg_mask = cv.imread(bg_mask_path)
+    bg_mask_painting = np.zeros(bg_mask.shape, dtype=np.uint8)
+    bg_mask_painting[tly:bry, tlx:brx] = 255
+
     # Combine the image and the background mask
-    combined = cv.bitwise_and(cv.imread(image_path), cv.imread(bg_mask_path))
+    combined = cv.bitwise_and(cv.imread(image_path), bg_mask_painting)
 
     gray_combined = cv.cvtColor(combined,cv.COLOR_BGR2GRAY)
 
@@ -242,12 +275,17 @@ def compute_fg(image_path, bg_mask_path, painting_id, bg_results_path):
     x1, y1 = coords.max(axis=0) + 1
 
     # Get the contents of the bounding box.
-    fg_image = combined[x0:x1, y0:y1]
+    painting = combined[x0:x1, y0:y1]
 
     # Save foreground image
-    cv.imwrite(bg_results_path, fg_image)
+    cv.imwrite(bg_results_path, painting)
 
-    return fg_image
+    # cv.imshow('bg_mask', bg_mask)
+    # cv.imshow('bg_mask_painting', bg_mask_painting)
+    # cv.imshow('painting', painting)
+    # cv.waitKey()
+
+    return painting
 
 def compute_bg_mask(image_path, bg_mask_path, method="M0", color_space="RGB"):
     """
@@ -271,12 +309,9 @@ def compute_bg_mask(image_path, bg_mask_path, method="M0", color_space="RGB"):
         mask = methods.get_mask_M3(image)
 
     elif method == "M4":
-        mask = methods.get_mask_M4(image)
-
-    elif method == "M5":
-        mask = methods.get_mask_M5(image)
+        [mask, paintings_coords] = methods.get_mask_M4(image)
 
     # Save background mask
     cv.imwrite(bg_mask_path, mask)
 
-    return 1
+    return paintings_coords

@@ -63,7 +63,7 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
     sizeY = image.shape[0]
 
     hist_concat = None
-
+    
     for i in range(0,block_size):
         for j in range(0, block_size):
             # Image block
@@ -86,10 +86,6 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
                         if not (tlx < x < brx and  tly < y < bry):
                             img_cell_vector.append(img_cell[y,x,:])
 
-                            # img_cell[y,x][0] = 255
-                            # img_cell[y,x][1] = 0
-                            # img_cell[y,x][2] = 0
-
                 img_cell_vector = np.asarray(img_cell_vector)
 
                 n_channels = 1 if color_space == "GRAY" else image.shape[2]
@@ -100,9 +96,6 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
                     hist = compute_histogram(img_cell_matrix, n_bins, color_space)
 
-                    # cv.imshow("img_cell", img_cell)
-                    # cv.waitKey()
-
             if hist_concat is None:
                 hist_concat = hist
             else:
@@ -111,12 +104,12 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
     return hist_concat
 
 
-def compute_multiresolution_histograms(image_path, n_bins = 8, color_space = "RGB"):
+def compute_multiresolution_histograms(image_path, text_box, n_bins = 8, color_space = "RGB"):
     hist_concat = None
     block_sizes = [1, 4, 8, 16]
 
     for block_size in block_sizes:
-        hist = compute_histogram_blocks(image_path, n_bins, color_space,block_size)
+        hist = compute_histogram_blocks(image_path, text_box, n_bins, color_space,block_size)
         if hist_concat is None:
             hist_concat = hist
         else:
@@ -124,25 +117,30 @@ def compute_multiresolution_histograms(image_path, n_bins = 8, color_space = "RG
 
     return hist_concat
 
-def compute_bbdd_histograms(bbdd_path, n_bins=8, color_space="RGB", block_size=16):
+def compute_bbdd_histograms(bbdd_path, method="M1", n_bins=8, color_space="RGB", block_size=16):
     histograms = {}
 
     for image_filename in sorted(os.listdir(bbdd_path)):
         if image_filename.endswith('.jpg'):
             image_id = int(image_filename.replace('.jpg', '').replace('bbdd_', ''))
             image = cv.imread(os.path.join(bbdd_path, image_filename))
-            hist = compute_histogram_blocks(image, None, n_bins, color_space, block_size)
-            # hist = compute_multiresolution_histograms(image, n_bins, color_space)
+            if method == "M1":
+                hist = compute_histogram_blocks(image, None, n_bins, color_space, block_size)
+            else:
+                hist = compute_multiresolution_histograms(image, None, n_bins, color_space)
             histograms[image_id] = hist
 
     return histograms
 
-def get_k_images(painting, bbdd_histograms, text_box, k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", block_size=16):
+def get_k_images(painting, bbdd_histograms, text_box, method="M1", k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", block_size=16):
 
     reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
-    hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size)
-    # hist = compute_multiresolution_histograms(painting, n_bins, color_space)
+    if method == "M1":
+        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size)
+    else:
+        hist = compute_multiresolution_histograms(painting, text_box, n_bins, color_space)
+
     distances = {}
 
     for bbdd_id, bbdd_hist in bbdd_histograms.items():
