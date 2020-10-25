@@ -152,7 +152,7 @@ def get_mask_M4(image):
 
     mask = np.zeros(bw.shape, dtype=np.uint8)
 
-    final_contours_aux = []
+    paintings_coords_aux = []
 
     found = False
 
@@ -163,33 +163,33 @@ def get_mask_M4(image):
         r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
 
         if r > 0.35 and w > gray.shape[1]/8 and h > gray.shape[0]/8:
-            final_contours_aux.append([x,y,x+w,y+h])
+            paintings_coords_aux.append([x,y,x+w,y+h])
             found = True
 
-    final_contours = []
+    paintings_coords = []
 
-    if len(final_contours_aux) == 2:
-        tlx1 = final_contours_aux[0][0]
-        tly1 = final_contours_aux[0][1]
-        brx1 = final_contours_aux[0][2]
-        bry1 = final_contours_aux[0][3]
+    if len(paintings_coords_aux) == 2:
+        tlx1 = paintings_coords_aux[0][0]
+        tly1 = paintings_coords_aux[0][1]
+        brx1 = paintings_coords_aux[0][2]
+        bry1 = paintings_coords_aux[0][3]
 
-        tlx2 = final_contours_aux[1][0]
-        tly2 = final_contours_aux[1][1]
-        brx2 = final_contours_aux[1][2]
-        bry2 = final_contours_aux[1][3]
+        tlx2 = paintings_coords_aux[1][0]
+        tly2 = paintings_coords_aux[1][1]
+        brx2 = paintings_coords_aux[1][2]
+        bry2 = paintings_coords_aux[1][3]
 
         if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
-            final_contours.append(final_contours_aux[0])
-            final_contours.append(final_contours_aux[1])
+            paintings_coords.append(paintings_coords_aux[0])
+            paintings_coords.append(paintings_coords_aux[1])
         else:
-            final_contours.append(final_contours_aux[1])
-            final_contours.append(final_contours_aux[0])
+            paintings_coords.append(paintings_coords_aux[1])
+            paintings_coords.append(paintings_coords_aux[0])
     else:
-        final_contours.append(final_contours_aux[0])
+        paintings_coords.append(paintings_coords_aux[0])
 
     mask = np.zeros(gray.shape)
-    for box_coords in final_contours:
+    for box_coords in paintings_coords:
         x0 = box_coords[0]
         y0 = box_coords[1]
         x1 = box_coords[2]
@@ -198,19 +198,36 @@ def get_mask_M4(image):
         pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
         cv.fillConvexPoly(mask, pnts, 255)
 
-        cv.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
-        cv.imshow("image", image)
-        cv.waitKey()
+        # cv.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
+        # cv.imshow("image", image)
+        # cv.waitKey()
+
+    mask3d = np.zeros(image.shape)
+    for box_coords in paintings_coords:
+        x0 = box_coords[0]
+        y0 = box_coords[1]
+        x1 = box_coords[2]
+        y1 = box_coords[3]
+
+        pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
+        cv.fillConvexPoly(mask3d[0], pnts, 255)
+        cv.fillConvexPoly(mask3d[1], pnts, 255)
+        cv.fillConvexPoly(mask3d[2], pnts, 255)
+
+        # cv.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
+        # cv.imshow("image", image)
+        # cv.waitKey()
 
 
     # if not found:
     #     mask = get_mask_M0(image)
 
     # cv.imshow('gray', gray)
-    # cv.imshow('morphy', morphy)
+    # cv.imshow('grad', grad)
     # cv.imshow('bw', bw)
+    # cv.imshow('morphy', morphy)
     # cv.imshow('image', image)
     # cv.imshow('mask', mask)
     # cv.waitKey(0)
 
-    return mask
+    return [mask, paintings_coords]
