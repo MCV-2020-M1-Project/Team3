@@ -28,7 +28,7 @@ def signaltonoise(a, axis=0, ddof=0):
     return np.where(sd == 0, 0, m/sd)
 
 
-path = "/home/victor/Escritorio/Víctor/master computer vision/M1/Project/week 3/qsd2_w3"
+path = "../data/qsd2_w3"
 imagenes = readImages(path,".jpg")
 
 for img in imagenes:
@@ -40,7 +40,6 @@ for img in imagenes:
     psnr = PSNR(imagenes[img], gaussiana)
     if psnr < 31:
         imagenes[img] = gaussiana
-        print(img+ "con ruido")
 
-    cv2.imshow("gaussiana"+img,imagenes[img])
+    #cv2.imshow("gaussiana"+img,imagenes[img])
 cv2.waitKey()
