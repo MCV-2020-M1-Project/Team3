@@ -2,7 +2,7 @@ import sys
 
 from week1 import run_w1 as w1
 from week2 import run_w2_1 as w2_1
-from week2 import run_w2 as w2
+from week3 import run_w3 as w3
 
 if __name__=="__main__":
 
@@ -14,4 +14,6 @@ if __name__=="__main__":
             rows = cols = int(sys.argv[2])
             w2_1.run(rows=rows, cols=cols)
         else:
-            w2.run()
+            w2_1.run()
+    if "--week3" in sys.argv:
+        w3.run()
