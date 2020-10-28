@@ -1,5 +1,5 @@
 import pytesseract as tess
-tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' #your path to tesseract for windows users
+tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'#your path to tesseract for windows users
 from PIL import Image
 import operator
 import cv2 as cv
@@ -26,12 +26,13 @@ def get_bbdd_texts(bbdd_path):
 
 
 def get_text(img, text_box):
-    tl_x=text_box[0][0]
-    tl_y=text_box[0][1]
-    br_x=text_box[1][0]
-    br_y=text_box[1][1]
+    print(text_box)
+    tl_x=text_box[0]
+    tl_y=text_box[1]
+    br_x=text_box[2]
+    br_y=text_box[3]
     
-    roi=img[tl_x:br_x,tl_y:br_y]
+    roi=img[tl_y:br_y,tl_x:br_x]
     text = tess.image_to_string(roi,lang='cat').rstrip().lower() # removes the end whitespaces and lower to ignore case
     
     return text
@@ -73,13 +74,13 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Levensth
         
 
 
-###----TEST AREA----
-img = cv.imread("data/qsd1_w2/00000.jpg") 
-roi = [[0,105],[110,574]]
-bbdd_path='data/BBDD/'
+# ##----TEST AREA----
+# img = cv.imread("data/qsd1_w2/00000.jpg") 
+# roi = [105,0,574,110]
+# bbdd_path='data/BBDD/'
 
-bbdd_texts=get_bbdd_texts(bbdd_path)
+# bbdd_texts=get_bbdd_texts(bbdd_path)
 
-predicted_paintings = get_k_images(img,roi,bbdd_texts)
-print(predicted_paintings)
+# predicted_paintings = get_k_images(img,roi,bbdd_texts)
+# print(predicted_paintings)
 
