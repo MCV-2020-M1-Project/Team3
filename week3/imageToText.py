@@ -26,7 +26,7 @@ def get_bbdd_texts(bbdd_path):
 
 
 def get_text(img, text_box):
-    print(text_box)
+    
     tl_x=text_box[0]
     tl_y=text_box[1]
     br_x=text_box[2]
@@ -34,7 +34,7 @@ def get_text(img, text_box):
     
     roi=img[tl_y:br_y,tl_x:br_x]
     text = tess.image_to_string(roi).strip().lower() # removes the end whitespaces and lower to ignore case
-    
+    print(text)
     return text
 
 def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
@@ -54,21 +54,20 @@ def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
 def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"):
 
     text = get_text(painting, text_box)
-    print(text)
     distances = {}
 
     for bbdd_id, bbdd_text in bbdd_texts.items():
         
         if bbdd_text!='empty':
-            bbdd_text=bbdd_text.replace("(","").replace("'","").replace(")","")
-            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",")[1].strip(),distance_metric) #for week 3 dataset change to index 0 = author
+            bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
+            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric) 
         
         else:
             distances[bbdd_id]=100
             
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images]
+    return [predicted_image[0] for predicted_image in k_predicted_images],text
         
 
 
