@@ -82,7 +82,24 @@ def detect_text_box2(img):
                 max_area = cnt[2]*cnt[3]
                 max_area_idx = idx
         final_contours.append(final_contours_aux[max_area_idx])
-    # else:
+    else:
+        final_contours_aux2 = []
+        print('aaaa')
+        for idx in range(len(cnts)):
+            print('eeee')
+            x, y, w, h = cv.boundingRect(cnts[idx])
+            mask[y:y+h, x:x+w] = 0
+            cv.drawContours(mask, cnts, idx, (255, 255, 255), -1)
+            r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
+            final_contours_aux2.append([x,y,w,h])
+        if len(final_contours_aux2) > 0:
+            max_area = 0
+            max_area_idx = 0
+            for idx, cnt in enumerate(final_contours_aux2):
+                if cnt[2]*cnt[3] > max_area:
+                    max_area = cnt[2]*cnt[3]
+                    max_area_idx = idx
+            final_contours.append(final_contours_aux2[max_area_idx])
 
     return [final_contours[0][0], final_contours[0][1], final_contours[0][2], final_contours[0][3]]
 
@@ -262,6 +279,10 @@ def compute_fg(image_path, bg_mask_path, painting_coords, bg_results_path):
     bg_mask_painting = np.zeros(bg_mask.shape, dtype=np.uint8)
     bg_mask_painting[tly:bry, tlx:brx] = 255
 
+    # cv.imshow('bg_mask', bg_mask)
+    # cv.imshow('bg_mask_painting',bg_mask_painting)
+    # cv.waitKey()
+
     # Combine the image and the background mask
     combined = cv.bitwise_and(cv.imread(image_path), bg_mask_painting)
 
@@ -310,6 +331,9 @@ def compute_bg_mask(image_path, bg_mask_path, method="M0", color_space="RGB"):
 
     elif method == "M4":
         [mask, paintings_coords] = methods.get_mask_M4(image)
+
+    elif method == "M5":
+        [mask, paintings_coords] = methods.get_mask_M5(image)
 
     # Save background mask
     cv.imwrite(bg_mask_path, mask)
