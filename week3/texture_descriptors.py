@@ -36,3 +36,8 @@ def dct_descriptor(image, norm, n_coefs):
     coefs = zig_zag[:n_coefs]
 
     return coefs
+
+def hog(image):
+    hog = cv.HOGDescriptor()
+    return hog.compute(image)
+
