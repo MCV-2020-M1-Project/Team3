@@ -64,10 +64,12 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
         
         else:
             distances[bbdd_id]=100
-            
+    
+    min_distance = min(distances.values()) 
+    author_images = [key for key in distances if distances[key] == min_distance]        
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images],text
+    return [predicted_image[0] for predicted_image in k_predicted_images], author_images
         
 
 
