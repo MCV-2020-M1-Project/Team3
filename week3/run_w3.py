@@ -3,7 +3,9 @@ import os
 import ml_metrics as mlm
 import cv2 as cv
 
-import week1.histogram as hist
+from tqdm import tqdm
+
+import week3.histogram_w3 as hist
 import week1.masks as masks
 import week1.evaluation as evaluation
 import week1.bg_removal_methods as bg
@@ -12,22 +14,22 @@ def run():
     print('---------------------------------------------')
 
     # Path to bbdd and query datasets
-    bbdd_path = 'D:\MCV\M1\Project\BBDD'
-    query_path = 'D:\MCV\M1\Project\qsd1_w2'
+    bbdd_path = 'data/BBDD'
+    query_path = 'data/qsd1_w1'
 
     # Flags to select algorithms
-    bg_removal = True
-    text_detection = True
+    bg_removal = False
+    text_detection = False
 
     # Test mode
-    test = True
+    test = False
 
     # Parameters
-    distance = "Hellinger"
+    distance = "Correlation"
     color_space = "RGB"
-    k = 10 # Retrieve k most similar images
+    k = 5 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
-    block_size = 16 # Block-based histogram
+    block_size = 1 # Block-based histogram
     method_compute_hist = "M1"
     method_bg = "M4" # Method to perform background removal
 
@@ -54,7 +56,7 @@ def run():
     print('**********************')
     print('Dataset: {}, Method to compute histograms: {}, Background removal: {}, Text detection: {}'.format(query_path, method_compute_hist, bg_removal, text_detection))
     print('**********************')
-    print("Computing bbdd histograms...", end=' ', flush=True)
+    print("Computing bbdd histograms...")
 
     bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
 
