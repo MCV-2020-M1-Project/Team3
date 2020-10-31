@@ -72,15 +72,15 @@ def run_task2():
             
             # text_boxes_gt= pickle.load(open(groundtruth_text_boxes_path, 'rb'))
             # text_box = text_boxes_gt[image_id][0]
-
+            # text_boxes.append(text_box) 
            
             [tlx, tly, brx, bry] = masks.detect_text_box(image)
             text_boxes.append([tlx, tly, brx, bry])  
             
-            predicted_text_list = itt.get_k_images(image, text_boxes[image_id],bbdd_texts,k=10,distance_metric="Levensthein")
+            predicted_text_list,author_list, text_distances = itt.get_k_images(image, text_boxes[image_id],bbdd_texts,k=10,distance_metric="Levensthein")
             
             # Retrieves the k most similar images ignoring text bounding boxes
-            predicted_color_list = hist.get_k_images(image, bbdd_histograms, text_boxes[image_id],
+            predicted_color_list,color_distances = hist.get_k_images(image, bbdd_histograms, text_boxes[image_id],
                                                     method_compute_hist, k, n_bins, distance, color_space, block_size)
             
             groundtruth_images_list.append(groundtruth_images[image_id])
