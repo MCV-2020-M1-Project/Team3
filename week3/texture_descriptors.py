@@ -43,5 +43,5 @@ def hog(image):
     return hog.compute(image)
 
 def wavelet(image, mode='haar', level=1):
-    coeffs = pywt.wavedecn(image, mode, level=level)
+    coeffs = pywt.wavedec2(image, mode, level=level)
     return list(coeffs)
