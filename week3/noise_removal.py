@@ -21,6 +21,7 @@ def PSNR(original, compressed):
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
     return psnr
+
 def signaltonoise(a, axis=0, ddof=0):
     a = np.asanyarray(a)
     m = a.mean(axis)
@@ -39,10 +40,6 @@ def denoiseImage(img):
         img = gaussiana
     
     return img
-
-
-
-
 
 # path = "../data/qsd2_w3"
 # imagenes = readImages(path,".jpg")
