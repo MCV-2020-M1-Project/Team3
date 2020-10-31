@@ -2,6 +2,7 @@ from skimage import feature
 import numpy as np
 from scipy.fftpack import dct, idct
 import cv2 as cv
+import pywt
 
 def lbp_hist(image, numPoints, radius, eps=1e-7):
 
@@ -41,3 +42,6 @@ def hog(image):
     hog = cv.HOGDescriptor()
     return hog.compute(image)
 
+def wavelet(image, mode='haar', level=1):
+    coeffs = pywt.wavedec(image, mode,level=level)
+    return list(coeffs)
