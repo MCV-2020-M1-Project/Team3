@@ -43,5 +43,22 @@ def hog(image):
     return hog.compute(image)
 
 def wavelet(image, mode='haar', level=1):
+    image = np.float32(image)
+    image /= 255
+    # compute coefficients
     coeffs = pywt.wavedec2(image, mode, level=level)
-    return list(coeffs)
+
+    # Process Coefficients
+    # Here we need to do something with the coeficients returned but I'm not sure what to do
+    coeffs_H = list(coeffs)
+    coeffs_H[0] *= 0 #remove this line for the original image given to show after reconstruction
+
+    # reconstruction
+    imArray_H = pywt.waverec2(coeffs_H, mode)
+    imArray_H *= 255
+    imArray_H = np.uint8(imArray_H)
+    # Display result
+    cv.imshow('image', imArray_H)
+    cv.waitKey(0)
+
+    return coeffs
