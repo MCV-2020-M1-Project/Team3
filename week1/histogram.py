@@ -149,4 +149,4 @@ def get_k_images(painting, bbdd_histograms, text_box, method="M1", k="10", n_bin
 
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images]
+    return [predicted_image[0] for predicted_image in k_predicted_images],distances
