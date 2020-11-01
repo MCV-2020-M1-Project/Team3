@@ -54,9 +54,9 @@ def run():
     # Test mode
     test = False
     
-    color_retrieval = True
+    color_retrieval = False
     text_retrieval = False
-    texture_retrieval = False
+    texture_retrieval = True
     
     text_ponderation = 1
     color_ponderation = 1
@@ -89,41 +89,41 @@ def run():
         groundtruth_paintings = pickle.load(open(os.path.join(query_path, "gt_corresps.pkl"), 'rb'))
         groundtruth_text_boxes_path = os.path.join(query_path, 'text_boxes.pkl')
         
-    # if color_retrieval:
+    if color_retrieval:
             
-    print('**********************')
-    print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
-    print('**********************')
-    print("Computing bbdd histograms...", end=' ', flush=True)
+        print('**********************')
+        print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
+        print('**********************')
+        print("Computing bbdd histograms...", end=' ', flush=True)
 
-    bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
+        bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
 
-    print("Done!")
-    print('**********************')
+        print("Done!")
+        print('**********************')
     
-# if texture_retrieval:
+    if texture_retrieval:
         
-    print('**********************')
-    print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
-    print('**********************')
-    print("Computing bbdd textures...", end=' ', flush=True)
-
-    bbdd_texture = hist.compute_bbdd_histograms(bbdd_path, method_texture, n_bins, color_space, block_size)
-
-    print("Done!")
-    print('**********************')        
+        print('**********************')
+        print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
+        print('**********************')
+        print("Computing bbdd textures...", end=' ', flush=True)
     
-# if text_retrieval:
+        bbdd_texture = hist.compute_bbdd_histograms(bbdd_path, method_texture, n_bins, color_space, block_size)
+    
+        print("Done!")
+        print('**********************')        
+    
+    if text_retrieval:
         
-    print('**********************')
-    print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
-    print('**********************')
-    print("Collecting bbdd texts...", end=' ', flush=True)
-
-    bbdd_texts=itt.get_bbdd_texts(bbdd_path)
-
-    print("Done!")
-    print('**********************')        
+        print('**********************')
+        print('Dataset: {}, Background removal: {}, Color retrieval: {}, Texture retrieval:{}, Text retrieval: {}'.format(query_path, bg_removal, color_retrieval,texture_retrieval,text_retrieval))
+        print('**********************')
+        print("Collecting bbdd texts...", end=' ', flush=True)
+    
+        bbdd_texts=itt.get_bbdd_texts(bbdd_path)
+    
+        print("Done!")
+        print('**********************')        
     
 
     predicted_paintings_list = []
@@ -169,9 +169,10 @@ def run():
             for painting_id, painting in enumerate(paintings):
                 # First we denoise the painting
                 painting=nr.denoiseImage(painting)
-
+                # painting=nr.denoise_image_wavelet1(painting)
+                # print(painting.shape)
                 #To detect the text bounding box of the painting
-                [tlx, tly, brx, bry] = masks.detect_text_box(painting)
+                [tlx, tly, brx, bry],_ = masks.detect_text_box(painting)
 
                 # If there are two paintings, when detecting the text bouning box of the
                 # second one we have to shift the coordinates so that they make sense in the initial image
@@ -192,32 +193,53 @@ def run():
                 f.write(painting_text)
                 f.close()
                 
-                # if text_retrieval:
+                if text_retrieval:
                 # Retrieves the k most similar images ignoring text bounding boxes
-                predicted_text_paintings, author_list,text_distances = itt.get_k_images(painting, [tlx, tly, brx, bry],bbdd_texts,k=10,distance_metric="Levensthein")
-                # predicted_paintings_per_image.append(predicted_text_paintings)
+                    predicted_text_paintings, author_list,text_distances = itt.get_k_images(painting, [tlx, tly, brx, bry],bbdd_texts,k=10,distance_metric="Levensthein")
+                    predicted_paintings_per_image.append(predicted_text_paintings)
                                 
                 
-                # if color_retrieval:
-                    
+                if color_retrieval:
                 # Retrieves the k most similar images ignoring text bounding boxes
-                predicted_color_paintings,color_distances = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
-                                            method_compute_hist, k, n_bins, distance, color_space, block_size)
-            
-                # predicted_paintings_per_image.append(predicted_color_paintings)
+                    predicted_color_paintings,color_distances = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
+                                                method_compute_hist, k, n_bins, distance, color_space, block_size)
+    
                 
-                # if texture_retrieval:
-                predicted_texture_paintings,texture_distances = hist.get_k_images(painting, bbdd_texture, text_boxes_image[painting_id],
-                                            method_texture, k, n_bins, distance, color_space, block_size)
+                if texture_retrieval:
+                    predicted_texture_paintings,texture_distances = hist.get_k_images(painting, bbdd_texture, text_boxes_image[painting_id],
+                                                method_texture, k, n_bins, distance, color_space, block_size)
                     #do the stuff, get texture_distances
           
-                lam1=text_ponderation*int(text_retrieval== True)
-                lam2=color_ponderation*int(color_retrieval== True)
-                lam3=texture_ponderation*int(texture_retrieval== True)
+                
+                lam1=color_ponderation*int(color_retrieval== True)
+                lam2=texture_ponderation*int(texture_retrieval== True)
+                lam3=text_ponderation*int(text_retrieval== True)
                 
                 weighted_distances={}
-                for key in text_distances:
-                    weighted_distances[key]=lam1*text_distances[key]+lam2*color_distances[key]+lam3*texture_distances[key]
+                if color_retrieval:
+                    if text_retrieval:
+                        if texture_retrieval:
+                            for key in color_distances:
+                                weighted_distances[key]=lam1*color_distances[key]+lam2*texture_distances[key]+lam3*text_distances[key]
+                        else:
+                            for key in color_distances:
+                                weighted_distances[key]=lam1*color_distances[key]+lam3*text_distances[key]
+                    elif texture_retrieval:
+                        for key in color_distances:
+                            weighted_distances[key]=lam1*color_distances[key]+lam2*texture_distances[key]
+                    else:
+                        weighted_distances=color_distances
+                elif texture_retrieval:
+                    if text_retrieval:
+                        for key in texture_distances:
+                            weighted_distances[key]=lam2*texture_distances[key]+lam3*text_distances[key] 
+                    else:
+                        weighted_distances=texture_distances
+                elif text_retrieval:
+                    weighted_distances=text_distances
+                else:
+                    print("NO METHOD SELECTED!!!")
+                
                     
                 k_predicted_images = (sorted(weighted_distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
                 
