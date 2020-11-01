@@ -21,6 +21,7 @@ def PSNR(original, compressed):
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
     return psnr
+
 def signaltonoise(a, axis=0, ddof=0):
     a = np.asanyarray(a)
     m = a.mean(axis)
@@ -28,34 +29,19 @@ def signaltonoise(a, axis=0, ddof=0):
     return np.where(sd == 0, 0, m/sd)
 
 def denoiseImage(img):
-    if(img.shape[1] < 500):
-        filter_dimension = 5
-    else:
-        filter_dimension = 11
-    
-    gaussiana =  cv2.GaussianBlur(img,(filter_dimension,filter_dimension),0)
+    gaussiana =  cv2.medianBlur(img,3)
     psnr = PSNR(img, gaussiana)
-    if psnr < 31:
+    if psnr < 33:
         img = gaussiana
     
     return img
 
 
+"""path = "../data/qsd1_w3"
+imagenes = readImages(path,".jpg")
 
-
-
-# path = "../data/qsd2_w3"
-# imagenes = readImages(path,".jpg")
-
-# for img in imagenes:
-#     if(imagenes[img].shape[1] < 500):
-#         filter_dimension = 5
-#     else:
-#         filter_dimension = 11
-#     gaussiana =  cv2.GaussianBlur(imagenes[img],(filter_dimension,filter_dimension),0)
-#     psnr = PSNR(imagenes[img], gaussiana)
-#     if psnr < 31:
-#         imagenes[img] = gaussiana
-
-#     #cv2.imshow("gaussiana"+img,imagenes[img])
-# cv2.waitKey()
+for img in imagenes:
+    imagenes[img] = denoiseImage(imagenes[img],img)
+    #cv2.imshow(img,imagenes[img])
+    cv2.imwrite("../data/filtradas/"+img+".jpg",imagenes[img])
+cv2.waitKey()"""
