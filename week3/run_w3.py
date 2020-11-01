@@ -6,13 +6,40 @@ import numpy as np
 import operator
 
 import imageToText as itt
-import week1.histogram as hist
+import week3.histogram_w3 as hist
 import week1.masks as masks
 import week1.evaluation as evaluation
 import week1.bg_removal_methods as bg
 import noise_removal as nr
 
-
+TEXTURE_DESCRIPTORS_DISTANCES = {
+    "LBP": "Correlation",
+    "DCT": "Hellinger",
+    "HOG": "",
+    "WAVELET": ""
+}
+    ##------Oscar struct proposal----Future improvement
+    # # Initialize parameters (color_ponderation, etc etc) and then create this struct:
+    # params = {"color": None, "texture": None, "text": None, "bg_removal": None}
+    #
+    # if color_retrieval:
+    #     params["color"] = {"weight": color_ponderation, "distance_metric": "Hellinger",
+    #                        "color_space": "RGB", "n_bins": 8}
+    # # We may want to combine different texture descriptors (e.g. LBP + DCT), so we need to add more than one ponderation/descriptor here
+    # if texture_retrieval:
+    #     params["texture"] = {"weight": texture_ponderation, "descriptor": texture_descriptor,
+    #                          "distance_metric": TEXTURE_DESCRIPTORS_DISTANCES[texture_descriptor]}
+    #
+    # if text_retrieval:
+    #     params["text"] = {"weight": text_ponderation, "distance_metric": "????"}
+    #
+    # if bg_removal:
+    #     params["bg_removal"] = {"method": "M5"}
+    #
+    # # Then in compute_bbdd_histograms function (for example) we can only pass the params struct
+    # # and check if a descriptor is needed (e.g. if params["texture"] is not None) and then access to the param
+    # # values like params["texture"]["descriptor"]
+    ## ---------------------------
 def run():
     print('---------------------------------------------')
 
@@ -22,7 +49,7 @@ def run():
 
     # Flags to select algorithms and ponderations
     bg_removal = False
-    method_bg = "M4" # Method to perform background removal
+    method_bg = "M5" # Method to perform background removal
     
     # Test mode
     test = False
@@ -34,7 +61,7 @@ def run():
     text_ponderation = 1
     color_ponderation = 1
     texture_ponderation = 1
-    
+        
     # Color Parameters
     distance = "Hellinger"
     color_space = "RGB"
@@ -42,7 +69,7 @@ def run():
     n_bins = 8 # Number of bins per each histogram channel
     block_size = 16 # Block-based histogram
     method_compute_hist = "M1"    
-    
+    method_texture = "M2" 
 
     # Path to results
     results_path = os.path.join(query_path, 'results')
@@ -81,7 +108,7 @@ def run():
     print('**********************')
     print("Computing bbdd textures...", end=' ', flush=True)
 
-    #bbdd_texture = compute_texture_on_histogram(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
+    bbdd_texture = hist.compute_bbdd_histograms(bbdd_path, method_texture, n_bins, color_space, block_size)
 
     print("Done!")
     print('**********************')        
@@ -179,8 +206,9 @@ def run():
             
                 # predicted_paintings_per_image.append(predicted_color_paintings)
                 
-                if texture_retrieval:
-                    print('texture_method_here')
+                # if texture_retrieval:
+                predicted_texture_paintings,texture_distances = hist.get_k_images(painting, bbdd_texture, text_boxes_image[painting_id],
+                                            method_texture, k, n_bins, distance, color_space, block_size)
                     #do the stuff, get texture_distances
           
                 lam1=text_ponderation*int(text_retrieval== True)
@@ -189,7 +217,7 @@ def run():
                 
                 weighted_distances={}
                 for key in text_distances:
-                    weighted_distances[key]=lam1*text_distances[key]+lam2*color_distances[key]#+lam3*text_distance[key]
+                    weighted_distances[key]=lam1*text_distances[key]+lam2*color_distances[key]+lam3*texture_distances[key]
                     
                 k_predicted_images = (sorted(weighted_distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
                 
