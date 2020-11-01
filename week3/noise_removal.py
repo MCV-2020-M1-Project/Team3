@@ -1,15 +1,59 @@
 import os
-import cv2
+import cv2 as cv
 import numpy as np
-from math import log10, sqrt
+from math import log2, log10, sqrt
 from scipy import stats
 
+
+import pywt
+from skimage.restoration import (denoise_wavelet, estimate_sigma)
+
+# ----------------- Wavelet methods ---------------------
+
+def denoise_image_wavelet1(image):
+    sigma_est = estimate_sigma(image, multichannel=True, average_sigmas=True)
+    denoised_img = denoise_wavelet(image, multichannel=True, convert2ycbcr=False,
+                                     method='VisuShrink', mode='soft',
+                                     sigma=sigma_est*0.8, rescale_sigma=True)
+    return denoised_img
+
+# wavelet options: 'db1', 'haar', 'bior2.8', ... --> print(pywt.wavelist()) to show them
+def denoise_image_wavelet2(image, wavelet='bior2.8', level=3):
+
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+    # compute coefficients
+    coefs = pywt.wavedec2(gray, wavelet, level=level)
+
+    sigma = estimate_sigma(image, multichannel=True, average_sigmas=True)+3
+    threshold = sigma*sqrt(2*log2(image.size))
+
+    aux_coefs = list(map(lambda x: pywt.threshold(x,threshold, mode='soft'), coefs))
+    denoised_coefs = []
+    for cf in aux_coefs:
+        denoised_coefs.append(cf)
+
+    # Ugly code --> We must change it (not now)
+    if level == 1:
+        denoised_img = pywt.waverec2([denoised_coefs[0], [denoised_coefs[1][0], denoised_coefs[1][1],
+                                    denoised_coefs[1][2]]], wavelet)
+    elif level == 2:
+        denoised_img = pywt.waverec2([denoised_coefs[0], [denoised_coefs[1][0], denoised_coefs[1][1], denoised_coefs[1][2]],
+                                     [denoised_coefs[2][0], denoised_coefs[2][1], denoised_coefs[2][2]]], wavelet)
+    elif level == 3:
+        denoised_img = pywt.waverec2([denoised_coefs[0], [denoised_coefs[1][0], denoised_coefs[1][1], denoised_coefs[1][2]],
+                                     [denoised_coefs[2][0], denoised_coefs[2][1], denoised_coefs[2][2]],
+                                     [denoised_coefs[3][0], denoised_coefs[3][1], denoised_coefs[3][2]]], wavelet)
+
+    return denoised_img
+
+# --------------------------------------
 
 def readImages(path,extension):
     imagenes = dict()
     for filename in sorted(os.listdir(path)):
         if filename.find(extension) != -1:
-            img = cv2.imread(os.path.join(path, filename))
+            img = cv.imread(os.path.join(path, filename))
             imagenes[filename[0:-4]] = img
     return imagenes
 
@@ -36,10 +80,10 @@ for img in imagenes:
         filter_dimension = 5
     else:
         filter_dimension = 11
-    gaussiana =  cv2.GaussianBlur(imagenes[img],(filter_dimension,filter_dimension),0)
+    gaussiana =  cv.GaussianBlur(imagenes[img],(filter_dimension,filter_dimension),0)
     psnr = PSNR(imagenes[img], gaussiana)
     if psnr < 31:
         imagenes[img] = gaussiana
 
-    #cv2.imshow("gaussiana"+img,imagenes[img])
-cv2.waitKey()
+    #cv.imshow("gaussiana"+img,imagenes[img])
+cv.waitKey()

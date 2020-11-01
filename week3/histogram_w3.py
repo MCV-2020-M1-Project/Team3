@@ -32,7 +32,9 @@ OPENCV_DISTANCE_METRICS = {
 
 TEXTURE_HISTOGRAM_METHODS = {
     "LBP": texture.lbp_hist,
-    "DCT": texture.dct_hist
+    "DCT": texture.dct_hist,
+    "HOG": texture.hog_hist,
+    "WAVELET": texture.wavelet_hist
 }
 
 def compute_color_histogram(image, n_bins=8, color_space="RGB"):
@@ -58,7 +60,7 @@ def compute_color_histogram(image, n_bins=8, color_space="RGB"):
 
     return hist
 
-def compute_texture_histogram(image, method="DCT"):
+def compute_texture_histogram(image, method="WAVELET"):
     texture_method = TEXTURE_HISTOGRAM_METHODS[method]
     hist = texture_method(image)
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
@@ -66,7 +68,7 @@ def compute_texture_histogram(image, method="DCT"):
 
     return hist
 
-def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_size=16):
+def compute_histogram_blocks(image, text_box, n_bins, color_space, block_size):
     """
     compute_histogram_blocks()
 
