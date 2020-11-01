@@ -65,25 +65,17 @@ def PSNR(original, compressed):
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
     return psnr
+
 def signaltonoise(a, axis=0, ddof=0):
     a = np.asanyarray(a)
     m = a.mean(axis)
     sd = a.std(axis=axis, ddof=ddof)
     return np.where(sd == 0, 0, m/sd)
 
+def denoiseImage(img):
+    gaussiana =  cv.medianBlur(img,3)
+    psnr = PSNR(img, gaussiana)
+    if psnr < 33:
+        img = gaussiana
 
-path = "../data/qsd2_w3"
-imagenes = readImages(path,".jpg")
-
-for img in imagenes:
-    if(imagenes[img].shape[1] < 500):
-        filter_dimension = 5
-    else:
-        filter_dimension = 11
-    gaussiana =  cv.GaussianBlur(imagenes[img],(filter_dimension,filter_dimension),0)
-    psnr = PSNR(imagenes[img], gaussiana)
-    if psnr < 31:
-        imagenes[img] = gaussiana
-
-    #cv.imshow("gaussiana"+img,imagenes[img])
-cv.waitKey()
+    return img

@@ -46,21 +46,21 @@ def run():
 
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
-    query_path = 'data/qsd1_w1'
+    query_path = 'data/qsd2_w3'
 
     # Flags to select algorithms
-    bg_removal = False
+    bg_removal = True
     text_detection = False
 
     # Test mode
     test = False
 
     # Parameters
-    distance = "Hellinger"
+    distance = "Intersection"
     color_space = "RGB"
     k = 5 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
-    block_size = 8 # Block-based histogram
+    block_size = 16 # Block-based histogram
     method_compute_hist = "M1"
     method_bg = "M5" # Method to perform background removal
 
@@ -138,7 +138,7 @@ def run():
 
                 # If we need to detect the text bounding box of the painting
                 if text_detection:
-                    [tlx, tly, brx, bry] = masks.detect_text_box(painting)
+                    [tlx, tly, brx, bry], _ = masks.detect_text_box(painting)
 
                     # If there are two paintings, when detecting the text bouning box of the
                     # second one we have to shift the coordinates so that they make sense in the initial image
@@ -161,11 +161,6 @@ def run():
 
                 predicted_paintings_per_image.append(predicted_paintings)
 
-            predicted_paintings_list.append(predicted_paintings_per_image)
-
-            # Format of text_boxes: [[[tlx1, tly1, brx1, bry1], [tlx2, tly2, brx2, bry2]], [[tlx1, tly1, brx1, bry1]] ...]
-            text_boxes.append(text_boxes_image)
-
             if not test:
                 print('Image: {}'.format(query_filename))
                 for painting_id, groundtruth_painting in enumerate(groundtruth_paintings[image_id]):
@@ -177,9 +172,16 @@ def run():
                         print('        {} most similar images: {}'.format(k, predicted_paintings_per_image[painting_id]))
                     else:
                         print('        Painting not detected!!')
+                        predicted_paintings_per_image.append([0,0,0,0,0])
 
                 print('----------------------')
                 groundtruth_paintings_list.append(groundtruth_paintings[image_id])
+
+            predicted_paintings_list.append(predicted_paintings_per_image)
+
+            # Format of text_boxes: [[[tlx1, tly1, brx1, bry1], [tlx2, tly2, brx2, bry2]], [[tlx1, tly1, brx1, bry1]] ...]
+            text_boxes.append(text_boxes_image)
+
 
     if not test:
 

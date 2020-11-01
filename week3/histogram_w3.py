@@ -60,7 +60,7 @@ def compute_color_histogram(image, n_bins=8, color_space="RGB"):
 
     return hist
 
-def compute_texture_histogram(image, method="WAVELET"):
+def compute_texture_histogram(image, method="DCT"):
     texture_method = TEXTURE_HISTOGRAM_METHODS[method]
     hist = texture_method(image)
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
