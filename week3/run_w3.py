@@ -3,6 +3,8 @@ import os
 import ml_metrics as mlm
 import cv2 as cv
 
+import operator
+
 from tqdm import tqdm
 
 import week3.histogram_w3 as hist
@@ -43,24 +45,27 @@ def run():
     # # values like params["texture"]["descriptor"]
     # #---------------Ian-----------------
 
-
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
-    query_path = 'data/qsd2_w3'
+    query_path = 'data/qsd1_w1'
 
     # Flags to select algorithms
-    bg_removal = True
+    bg_removal = False
     text_detection = False
 
     # Test mode
     test = False
 
     # Parameters
-    distance = "Intersection"
+    distance_color = "Hellinger"
+    distance_texture = "Intersection"
+
+    block_size_color = 16
+    block_size_texture = 16
+
     color_space = "RGB"
     k = 5 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
-    block_size = 16 # Block-based histogram
     method_compute_hist = "M1"
     method_bg = "M5" # Method to perform background removal
 
@@ -89,7 +94,10 @@ def run():
     print('**********************')
     print("Computing bbdd histograms...")
 
-    bbdd_histograms = hist.compute_bbdd_histograms(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
+    bbdd_histograms_texture = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, n_bins, color_space, block_size_texture)
+    bbdd_histograms_color = hist.compute_bbdd_histograms_color(bbdd_path, method_compute_hist, n_bins, color_space, block_size_color)
+
+    # bbdd_texture_histograms = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
 
     print("Done!")
     print('**********************')
@@ -151,15 +159,36 @@ def run():
                     text_boxes_image.append([tlx, tly, brx, bry])
 
                     # Retrieves the k most similar images ignoring text bounding boxes
-                    predicted_paintings = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
-                                                    method_compute_hist, k, n_bins, distance, color_space, block_size)
+                    _, distances_texture = hist.get_k_images_texture(painting, bbdd_histograms_texture, text_boxes_image[painting_id],
+                                                    method_compute_hist, k, n_bins, distance_texture, color_space, block_size_texture)
+
+                    _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, text_boxes_image[painting_id],
+                                                    method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
 
                 else:
                     # Retrieves the k most similar images
-                    predicted_paintings = hist.get_k_images(painting, bbdd_histograms, None,
-                                                    method_compute_hist, k, n_bins, distance, color_space, block_size)
+                    _, distances_texture = hist.get_k_images_texture(painting, bbdd_histograms_texture, None,
+                                                    method_compute_hist, k, n_bins, distance_texture, color_space, block_size_texture)
+                    _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, None,
+                                                    method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
 
-                predicted_paintings_per_image.append(predicted_paintings)
+                # reverse = True if distance_color in ("Correlation", "Intersection") else False
+
+                reverse = False
+
+                color_weight = 0.5
+                texture_weight = 0.5
+                text_weight = 0.0
+
+                weighted_distances={}
+                for key in distances_color:
+                    weighted_distances[key]=color_weight*distances_color[key]+texture_weight*1/(distances_texture[key]+1e-7)#+text_weight*distances_text[key]
+
+                k_predicted_images = (sorted(weighted_distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
+
+                predicted_imgs_aux = [predicted_image[0] for predicted_image in k_predicted_images]
+
+                predicted_paintings_per_image.append(predicted_imgs_aux)
 
             if not test:
                 print('Image: {}'.format(query_filename))
