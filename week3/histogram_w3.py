@@ -6,9 +6,11 @@ import pickle
 import ntpath
 
 from tqdm import tqdm
-import multiprocessing.dummy as mltp
+import multiprocessing.dummy as mp
 from functools import partial
 from itertools import repeat
+
+import time
 
 import week1.metrics as metrics
 import week3.texture_descriptors as texture
@@ -54,17 +56,13 @@ def compute_color_histogram(image, n_bins=8, color_space="RGB"):
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
                         norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
 
-    # print('{} --> {} --> {}, {}'.format(len(hist), type(hist), hist.dtype, min(hist), max(hist)))
-
     return hist
 
 def compute_texture_histogram(image, method="DCT"):
-    texture_method = TEXTURE_HISTOGRAM_METHODS["LBP"]
+    texture_method = TEXTURE_HISTOGRAM_METHODS[method]
     hist = texture_method(image)
-    # print(hist)
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
                         norm_type=cv.NORM_MINMAX)
-    # print(hist)
 
     return hist
 
@@ -95,7 +93,7 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
 
             if not text_box:
                 # hist = compute_color_histogram(img_cell, n_bins, color_space)
-                hist = compute_texture_histogram(img_cell, method="DCT")
+                hist = compute_texture_histogram(img_cell)
 
             # If there's a text bounding box ignore the pixels inside it
             else:
@@ -120,7 +118,7 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
                 if img_cell_vector.size!=0:
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
                     # hist = compute_color_histogram(img_cell_matrix, n_bins, color_space)
-                    hist = compute_texture_histogram(img_cell_matrix, method="DCT")
+                    hist = compute_texture_histogram(img_cell_matrix)
 
             if hist_concat is None:
                 hist_concat = hist
@@ -143,34 +141,36 @@ def compute_multiresolution_histograms(image_path, text_box, n_bins = 8, color_s
 
     return hist_concat
 
-def compute_histogram(image_path, text_box, histograms, method, n_bins, color_space, block_size):
+def compute_histogram(image_path, text_box, method, n_bins, color_space, block_size):
 
-    if image_path.endswith('.jpg'):
-        image_id = int(image_path.split('/')[-1].replace('.jpg', '').replace('bbdd_', ''))
-        image = cv.imread(image_path)
+    image_id = int(image_path.split('/')[-1].replace('.jpg', '').replace('bbdd_', ''))
+    image = cv.imread(image_path)
 
-        if method == "M1":
-            hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size)
-        else:
-            hist = compute_multiresolution_histograms(image, text_box, n_bins, color_space)
+    if method == "M1":
+        hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size)
+    else:
+        hist = compute_multiresolution_histograms(image, text_box, n_bins, color_space)
 
-        histograms[image_id] = hist
-
-    return
+    return hist
 
 def compute_bbdd_histograms(bbdd_path, method="M1", n_bins=8, color_space="RGB", block_size=16):
 
+    #glob
     bbdd_paths = []
     for bbdd_filename in sorted(os.listdir(bbdd_path)):
         if bbdd_filename.endswith('.jpg'):
             bbdd_paths.append(os.path.join(bbdd_path, bbdd_filename))
 
-    histograms = {}
-    compute_histogram_partial = partial(compute_histogram, text_box=None, histograms=histograms, method=method,
+    compute_histogram_partial = partial(compute_histogram, text_box=None, method=method,
                                         n_bins=n_bins, color_space=color_space, block_size=block_size)
 
-    with mltp.Pool(processes=20) as p:
-        list(tqdm(p.imap(compute_histogram_partial, bbdd_paths), total=len(bbdd_paths))) # text_boxes --> None
+    processes = 4
+    with mp.Pool(processes=processes) as p:
+        hists = list(tqdm(p.imap(compute_histogram_partial, [path for path in bbdd_paths]), total=len(bbdd_paths)))
+
+    histograms = {}
+    for i,h in enumerate(hists):
+        histograms[i] = h
 
     return histograms
 
@@ -186,8 +186,6 @@ def get_k_images(painting, bbdd_histograms, text_box, method="M1", k="10", n_bin
     distances = {}
 
     for bbdd_id, bbdd_hist in bbdd_histograms.items():
-        # print('hist: {} --> {} --> {}, {}'.format(len(hist), type(hist), hist.dtype, min(hist), max(hist)))
-        # print('bbdd_hist: {} --> {} --> {}, {}'.format(len(bbdd_hist), type(bbdd_hist), bbdd_hist.dtype, min(bbdd_hist), max(bbdd_hist)))
         distances[bbdd_id] = cv.compareHist(hist, bbdd_hist, OPENCV_DISTANCE_METRICS[distance_metric])
         # distances[bbdd_id] = metrics.chi2_distance(hist, bbdd_hist)
 

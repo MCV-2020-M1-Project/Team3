@@ -25,11 +25,11 @@ def run():
     test = False
 
     # Parameters
-    distance = "Correlation"
+    distance = "Hellinger"
     color_space = "RGB"
     k = 5 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
-    block_size = 1 # Block-based histogram
+    block_size = 8 # Block-based histogram
     method_compute_hist = "M1"
     method_bg = "M4" # Method to perform background removal
 
