@@ -97,7 +97,7 @@ def detect_text_box1(image, img_v):
     otsu, img_thr = cv.threshold(grad, 0, 255, cv.THRESH_OTSU,)
 
     # using RETR_EXTERNAL instead of RETR_CCOMP
-    _, contours, hierarchy = cv.findContours(img_thr.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv.findContours(img_thr.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
 
     mask = np.zeros([img_v.shape[0], img_v.shape[1]], dtype=np.uint8)
 
@@ -129,71 +129,43 @@ def detect_text_box1(image, img_v):
     return [final_contours[0][0], final_contours[0][1], final_contours[0][2], final_contours[0][3]]
 
 def detect_text_box(image):
+    gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    laplacian = cv.Laplacian(gray, cv.CV_64F)
+    laplacian = cv.convertScaleAbs(laplacian)
+    cnt = cv.findContours(laplacian, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+    area_imagen = image.shape[0] * image.shape[1]
 
-    img_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+    area_max = 0
+    for c in cnt[0]:
+        # x,y,w,h = cv2.boundingRect(c)
+        # area = w*h
+        area = cv.contourArea(c)
+        if area > 1000 and ((area / area_imagen) * 100 < 25):
+            x, y, w, h = cv.boundingRect(c)
+            if area > area_max:
+                area_max = area
+                xm, ym, wm, hm = x, y, w, h
 
-    _,_,img_v = cv.split(img_hsv)
+    if area_max == 0:
+        sobelx = cv.Sobel(gray, cv.CV_64F, 1, 0, ksize=5)
+        sobely = cv.Sobel(gray, cv.CV_64F, 0, 1, ksize=5)
+        sobel = sobely + sobelx
+        sobel = cv.convertScaleAbs(sobel)
+        sobel = (255 - sobel)
+        sobel = cv.GaussianBlur(sobel, (3, 3), 0)
+        cnt2 = cv.findContours(sobel, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        area_max = 0
+        for c in cnt2[0]:
+            x, y, w, h = cv.boundingRect(c)
+            area = h * w
+            if area > 500 and ((area / area_imagen) * 100) < 20:
+                if area > area_max:
+                    area_max = area
+                    xm, ym, wm, hm = x, y, w, h
+    cv.rectangle(image, (xm, ym), (xm + wm, ym + hm), (36, 255, 12), 3)
 
-    contours_img_v = cv.Canny(img_v,400,500)
-
-    _, bw = cv.threshold(contours_img_v, 0.0, 255.0, cv.THRESH_BINARY | cv.THRESH_OTSU)
-
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, (50, 10))
-    connected = cv.morphologyEx(bw, cv.MORPH_CLOSE, kernel)
-
-    # using RETR_EXTERNAL instead of RETR_CCOMP
-    _, contours, hierarchy = cv.findContours(connected.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-
-    mask = np.zeros(bw.shape, dtype=np.uint8)
-
-    final_contours_aux = []
-
-    for idx in range(len(contours)):
-        x, y, w, h = cv.boundingRect(contours[idx])
-        mask[y:y+h, x:x+w] = 0
-        cv.drawContours(mask, contours, idx, (255, 255, 255), -1)
-        r = float(cv.countNonZero(mask[y:y+h, x:x+w])) / (w * h)
-
-        if r > 0.25 and w > contours_img_v.shape[1]/4 and h > contours_img_v.shape[0]/40 and w < contours_img_v.shape[1]*0.95 and h < contours_img_v.shape[0]*0.25 and w > 2*h and w*h < (contours_img_v.shape[0]*contours_img_v.shape[1])*0.4:
-            final_contours_aux.append([x,y,w,h])
-
-    final_contours = []
-
-    if len(final_contours_aux) > 0:
-        max_area = 0
-        max_area_idx = 0
-        for idx, contours in enumerate(final_contours_aux):
-            if contours[2]*contours[3] > max_area:
-                max_area = contours[2]*contours[3]
-                max_area_idx = idx
-        final_contours.append(final_contours_aux[max_area_idx])
-
-    else:
-        final_contours.append(detect_text_box1(image, contours_img_v))
-
-    cv.rectangle(image, (final_contours[0][0], final_contours[0][1]), (final_contours[0][0]+final_contours[0][2]-1, final_contours[0][1]+final_contours[0][3]-1), (0, 255, 0), 2)
-
-    # mask = np.zeros(contours_img_v.shape)
-    # for box_coords in final_contours:
-    #     x0 = box_coords[0]
-    #     y0 = box_coords[1]
-    #     x1 = box_coords[0] + box_coords[2]
-    #     y1 = box_coords[1] + box_coords[3]
-
-        # pnts = np.asarray([[x0,y0], [x0,y1], [x1,y1], [x1,y0]], dtype=np.int32)
-        # cv.fillConvexPoly(mask, pnts, 255)
-#
-    # cv.imshow('image', image)
-    # cv.imshow('img_v', img_v)
-    # cv.imshow('contours_img_v', contours_img_v)
-    # cv.imshow('bw', bw)
-    # cv.imshow('connected', connected)
-    # cv.imshow('rects', image)
-    # cv.waitKey(0)
-
-    # cv.fillConvexPoly()
-
-    return [final_contours[0][0], final_contours[0][1], final_contours[0][0] + final_contours[0][2], final_contours[0][1] + final_contours[0][3]]
+    return [xm,ym,xm + wm,hm + ym], image
+    
 
 def mask_evaluation(mask_path, groundtruth_path):
     """

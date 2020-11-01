@@ -16,7 +16,7 @@ def get_bbdd_texts(bbdd_path):
             f = open(os.path.join(bbdd_path, image_filename), "r")
             line= f.readline()
             if line.strip():
-                bbdd_text = line.lower().replace("(","").replace("'","").replace(")","") #ignore case
+                bbdd_text = line.lower().replace("(","").replace("'"," ").replace(")","") #ignore case
             else:
                 bbdd_text='empty'
             bbdd_texts[image_id] = bbdd_text
@@ -26,15 +26,15 @@ def get_bbdd_texts(bbdd_path):
 
 
 def get_text(img, text_box):
-    print(text_box)
+
     tl_x=text_box[0]
     tl_y=text_box[1]
     br_x=text_box[2]
     br_y=text_box[3]
     
     roi=img[tl_y:br_y,tl_x:br_x]
-    text = tess.image_to_string(roi,lang='cat').rstrip().lower() # removes the end whitespaces and lower to ignore case
-    
+    text = tess.image_to_string(roi).strip().lower() # removes the end whitespaces and lower to ignore case
+    print(text)
     return text
 
 def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
@@ -46,31 +46,30 @@ def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
         
     elif distance_metric=="Damerau":
         distance=jel.damerau_levenshtein_distance(text_1,text_2)
-        
-    elif distance_metric=="Jaro":
-        distance=int(10/jel.jaro_distance(text_1,text_2))
+
     else:
         print('Metric doesn\'t exist')
     return distance
         
-def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Levensthein"):
+def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"):
 
     text = get_text(painting, text_box)
-    
     distances = {}
 
     for bbdd_id, bbdd_text in bbdd_texts.items():
         
         if bbdd_text!='empty':
-            bbdd_text=bbdd_text.replace("(","").replace("'","").replace(")","")
-            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",")[1].rstrip(),distance_metric) #for week 3 dataset change to index 0 = author
+            bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
+            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric)
         
         else:
             distances[bbdd_id]=100
-            
+    
+    min_distance = min(distances.values()) 
+    author_images = [key for key in distances if distances[key] == min_distance]        
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images]
+    return [predicted_image[0] for predicted_image in k_predicted_images], author_images
         
 
 

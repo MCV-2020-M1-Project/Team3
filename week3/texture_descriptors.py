@@ -7,6 +7,7 @@ import math
 from numpy import pi
 from numpy import r_
 from scipy.stats import itemfreq
+import pywt
 
 def lbp_hist(image, numPoints=16, radius=2, eps=1e-7):
 
@@ -54,6 +55,31 @@ def zigzag(input, n_coefs):
         output.append(input[v,h])
 
         if ((h + v) % 2) == 0:                 # going up
+
+def hog(image):
+    hog = cv.HOGDescriptor()
+    return hog.compute(image)
+
+def wavelet(image, mode='haar', level=1):
+    image = np.float32(image)
+    image /= 255
+    # compute coefficients
+    coeffs = pywt.wavedec2(image, mode, level=level)
+
+    # Process Coefficients
+    # Here we need to do something with the coeficients returned but I'm not sure what to do
+    coeffs_H = list(coeffs)
+    coeffs_H[0] *= 0 #remove this line for the original image given to show after reconstruction
+
+    # reconstruction
+    imArray_H = pywt.waverec2(coeffs_H, mode)
+    imArray_H *= 255
+    imArray_H = np.uint8(imArray_H)
+    # Display result
+    cv.imshow('image', imArray_H)
+    cv.waitKey(0)
+
+    return coeffs
 
             if (v == vmin):
 
