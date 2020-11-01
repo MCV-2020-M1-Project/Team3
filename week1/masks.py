@@ -165,7 +165,7 @@ def detect_text_box(image):
     cv.rectangle(image, (xm, ym), (xm + wm, ym + hm), (36, 255, 12), 3)
 
     return [xm,ym,xm + wm,hm + ym], image
-    
+
 
 def mask_evaluation(mask_path, groundtruth_path):
     """
@@ -282,6 +282,9 @@ def compute_bg_mask(image_path, bg_mask_path, method="M0", color_space="RGB"):
 
     elif method == "M4":
         [mask, paintings_coords] = methods.get_mask_M4(image)
+
+    elif method == "M5":
+            [mask, paintings_coords] = methods.get_mask_M5(image)
 
     # Save background mask
     cv.imwrite(bg_mask_path, mask)
