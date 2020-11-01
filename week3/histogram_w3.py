@@ -5,7 +5,15 @@ import numpy as np
 import pickle
 import ntpath
 
-# import metrics
+from tqdm import tqdm
+import multiprocessing.dummy as mp
+from functools import partial
+from itertools import repeat
+
+import time
+
+import week1.metrics as metrics
+import week3.texture_descriptors as texture
 
 OPENCV_COLOR_SPACES = {
     "RGB": cv.COLOR_BGR2RGB,
@@ -22,12 +30,21 @@ OPENCV_DISTANCE_METRICS = {
     "Hellinger": cv.HISTCMP_BHATTACHARYYA
 }
 
-def compute_histogram(image, n_bins, color_space="RGB"):
+TEXTURE_HISTOGRAM_METHODS = {
+    "LBP": texture.lbp_hist,
+    "DCT": texture.dct_hist,
+    "HOG": texture.hog_hist,
+    "WAVELET": texture.wavelet_hist
+}
+
+def compute_color_histogram(image, n_bins=8, color_space="RGB"):
     """
-    compute_histogram()
+    compute_color_histogram()
 
     Function to compute ...
     """
+
+    image = cv.cvtColor(image, OPENCV_COLOR_SPACES[color_space])
 
     n_channels = 1 if color_space == "GRAY" else image.shape[2]
 
@@ -37,21 +54,28 @@ def compute_histogram(image, n_bins, color_space="RGB"):
 
     hist = cv.calcHist([image], hist_channels, None, hist_bins,
                        hist_range)
+
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
                         norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
+
     return hist
 
-def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_size=16):
+def compute_texture_histogram(image, method="WAVELET"):
+    texture_method = TEXTURE_HISTOGRAM_METHODS[method]
+    hist = texture_method(image)
+    hist = cv.normalize(hist, hist, alpha=0, beta=1,
+                        norm_type=cv.NORM_MINMAX)
+
+    return hist
+
+def compute_histogram_blocks(image, text_box, n_bins, color_space, block_size,color=True):
     """
     compute_histogram_blocks()
 
     Function to compute ...
     """
 
-    image = cv.cvtColor(image, OPENCV_COLOR_SPACES[color_space])
-
-    # image_id = int(ntpath.basename(image_path.replace('.jpg', '')))
-    # boxes = pickle.load(open(os.path.join(boxes_path), 'rb'))[image_id][0]
+    # image = cv.cvtColor(image, OPENCV_COLOR_SPACES[color_space])
 
     if text_box:
         tlx_init = text_box[0]
@@ -63,14 +87,17 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
     sizeY = image.shape[0]
 
     hist_concat = None
-    
+
     for i in range(0,block_size):
         for j in range(0, block_size):
             # Image block
             img_cell = image[int(i*sizeY/block_size):int(i*sizeY/block_size) + int(sizeY/block_size) ,int(j*sizeX/block_size):int(j*sizeX/block_size) + int(sizeX/block_size)]
 
             if not text_box:
-                hist = compute_histogram(img_cell, n_bins, color_space)
+                if color:
+                    hist = compute_color_histogram(img_cell, n_bins, color_space)
+                else:
+                    hist = compute_texture_histogram(img_cell)
 
             # If there's a text bounding box ignore the pixels inside it
             else:
@@ -94,7 +121,10 @@ def compute_histogram_blocks(image, text_box, n_bins, color_space="RGB", block_s
 
                 if img_cell_vector.size!=0:
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
-                    hist = compute_histogram(img_cell_matrix, n_bins, color_space)
+                    if color:
+                        hist = compute_color_histogram(img_cell_matrix, n_bins, color_space)
+                    else: 
+                        hist = compute_texture_histogram(img_cell_matrix)
 
             if hist_concat is None:
                 hist_concat = hist
@@ -117,18 +147,36 @@ def compute_multiresolution_histograms(image_path, text_box, n_bins = 8, color_s
 
     return hist_concat
 
-def compute_bbdd_histograms(bbdd_path, method="M1", n_bins=8, color_space="RGB", block_size=16):
-    histograms = {}
+def compute_histogram(image_path, text_box, method, n_bins, color_space, block_size):
 
-    for image_filename in sorted(os.listdir(bbdd_path)):
-        if image_filename.endswith('.jpg'):
-            image_id = int(image_filename.replace('.jpg', '').replace('bbdd_', ''))
-            image = cv.imread(os.path.join(bbdd_path, image_filename))
-            if method == "M1":
-                hist = compute_histogram_blocks(image, None, n_bins, color_space, block_size)
-            else:
-                hist = compute_multiresolution_histograms(image, None, n_bins, color_space)
-            histograms[image_id] = hist
+    image_id = int(image_path.split('/')[-1].replace('.jpg', '').replace('bbdd_', ''))
+    image = cv.imread(image_path)
+
+    if method == "M1":
+        hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size,True)
+    else:
+        hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size, False)
+
+    return hist
+
+def compute_bbdd_histograms(bbdd_path, method="M1", n_bins=8, color_space="RGB", block_size=16):
+
+    #glob
+    bbdd_paths = []
+    for bbdd_filename in sorted(os.listdir(bbdd_path)):
+        if bbdd_filename.endswith('.jpg'):
+            bbdd_paths.append(os.path.join(bbdd_path, bbdd_filename))
+
+    compute_histogram_partial = partial(compute_histogram, text_box=None, method=method,
+                                        n_bins=n_bins, color_space=color_space, block_size=block_size)
+
+    processes = 4
+    with mp.Pool(processes=processes) as p:
+        hists = list(tqdm(p.imap(compute_histogram_partial, [path for path in bbdd_paths]), total=len(bbdd_paths)))
+
+    histograms = {}
+    for i,h in enumerate(hists):
+        histograms[i] = h
 
     return histograms
 
@@ -137,9 +185,9 @@ def get_k_images(painting, bbdd_histograms, text_box, method="M1", k="10", n_bin
     reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
     if method == "M1":
-        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size)
+        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size,color=True)
     else:
-        hist = compute_multiresolution_histograms(painting, text_box, n_bins, color_space)
+        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size,color=False)
 
     distances = {}
 

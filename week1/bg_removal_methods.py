@@ -170,26 +170,29 @@ def get_mask_M4(image):
             found = True
 
     paintings_coords = []
+    if not found:
+        paintings_coords.append([0,0,image.shape[1],image.shape[0]])
 
-    if len(paintings_coords_aux) == 2:
-        tlx1 = paintings_coords_aux[0][0]
-        tly1 = paintings_coords_aux[0][1]
-        brx1 = paintings_coords_aux[0][2]
-        bry1 = paintings_coords_aux[0][3]
-
-        tlx2 = paintings_coords_aux[1][0]
-        tly2 = paintings_coords_aux[1][1]
-        brx2 = paintings_coords_aux[1][2]
-        bry2 = paintings_coords_aux[1][3]
-
-        if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
-            paintings_coords.append(paintings_coords_aux[0])
-            paintings_coords.append(paintings_coords_aux[1])
-        else:
-            paintings_coords.append(paintings_coords_aux[1])
-            paintings_coords.append(paintings_coords_aux[0])
     else:
-        paintings_coords.append(paintings_coords_aux[0])
+        if len(paintings_coords_aux) == 2:
+            tlx1 = paintings_coords_aux[0][0]
+            tly1 = paintings_coords_aux[0][1]
+            brx1 = paintings_coords_aux[0][2]
+            bry1 = paintings_coords_aux[0][3]
+
+            tlx2 = paintings_coords_aux[1][0]
+            tly2 = paintings_coords_aux[1][1]
+            brx2 = paintings_coords_aux[1][2]
+            bry2 = paintings_coords_aux[1][3]
+
+            if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
+                paintings_coords.append(paintings_coords_aux[0])
+                paintings_coords.append(paintings_coords_aux[1])
+            else:
+                paintings_coords.append(paintings_coords_aux[1])
+                paintings_coords.append(paintings_coords_aux[0])
+        else:
+            paintings_coords.append(paintings_coords_aux[0])
 
     mask = np.zeros(gray.shape)
     for box_coords in paintings_coords:
