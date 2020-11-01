@@ -174,20 +174,20 @@ def run():
                 #To detect the text bounding box of the painting
                 [tlx, tly, brx, bry],_ = masks.detect_text_box(painting)
 
-                # If there are two paintings, when detecting the text bouning box of the
-                # second one we have to shift the coordinates so that they make sense in the initial image
-                if bg_removal:
-                    tlx += paintings_coords[painting_id][0]
-                    tly += paintings_coords[painting_id][1]
-                    brx += paintings_coords[painting_id][0]
-                    bry += paintings_coords[painting_id][1]
-
-                text_boxes_image.append([tlx, tly, brx, bry])
-                
+                               
                 # We have to extract the text for each image and save it into a textfile
                 # one painting per line
                 painting_text = itt.get_text(painting,[tlx, tly, brx, bry])
                 
+                # # If there are two paintings, when detecting the text bouning box of the
+                # # second one we have to shift the coordinates so that they make sense in the initial image
+                # if bg_removal:
+                #     tlx += paintings_coords[painting_id][0]
+                #     tly += paintings_coords[painting_id][1]
+                #     brx += paintings_coords[painting_id][0]
+                #     bry += paintings_coords[painting_id][1]
+
+                text_boxes_image.append([tlx, tly, brx, bry])
                 predicted_text_path = os.path.join(results_path, query_filename.replace('.jpg', '.txt'))
                 f= open(predicted_text_path,"a+") 
                 f.write(painting_text)
@@ -201,12 +201,12 @@ def run():
                 
                 if color_retrieval:
                 # Retrieves the k most similar images ignoring text bounding boxes
-                    predicted_color_paintings,color_distances = hist.get_k_images(painting, bbdd_histograms, text_boxes_image[painting_id],
+                    predicted_color_paintings,color_distances = hist.get_k_images(painting, bbdd_histograms, [tlx, tly, brx, bry],
                                                 method_compute_hist, k, n_bins, distance, color_space, block_size)
     
                 
                 if texture_retrieval:
-                    predicted_texture_paintings,texture_distances = hist.get_k_images(painting, bbdd_texture, text_boxes_image[painting_id],
+                    predicted_texture_paintings,texture_distances = hist.get_k_images(painting, bbdd_texture, [tlx, tly, brx, bry],
                                                 method_texture, k, n_bins, distance, color_space, block_size)
                     #do the stuff, get texture_distances
           
@@ -279,7 +279,7 @@ def run():
         groundtruth_paintings_list_eval = []
         predicted_paintings_list_eval = []
 
-        if 'qsd2_w2' in query_path:
+        if 'qsd2_w3' in query_path:
             for groundtruth_paintings_per_image in groundtruth_paintings_list:
                 for groundtruth_painting in groundtruth_paintings_per_image:
                     groundtruth_paintings_list_eval.append([groundtruth_painting])
