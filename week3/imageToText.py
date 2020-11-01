@@ -26,7 +26,7 @@ def get_bbdd_texts(bbdd_path):
 
 
 def get_text(img, text_box):
-    
+
     tl_x=text_box[0]
     tl_y=text_box[1]
     br_x=text_box[2]
@@ -51,7 +51,7 @@ def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
         
     elif distance_metric=="Damerau":
         distance=jel.damerau_levenshtein_distance(text_1,text_2)
-        
+
     else:
         print('Metric doesn\'t exist')
     return distance
@@ -66,7 +66,7 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
         
         if bbdd_text!='empty':
             bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
-            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric) 
+            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric)
         
         else:
             distances[bbdd_id]=100
