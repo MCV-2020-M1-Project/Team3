@@ -5,12 +5,12 @@ import cv2 as cv
 import numpy as np
 import operator
 
-import imageToText as itt
+import week3.imageToText as itt
 import week3.histogram_w3 as hist
 import week1.masks as masks
 import week1.evaluation as evaluation
 import week1.bg_removal_methods as bg
-import noise_removal as nr
+import week3.noise_removal as nr
 
 TEXTURE_DESCRIPTORS_DISTANCES = {
     "LBP": "Correlation",
@@ -319,6 +319,3 @@ def run():
         print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
         print('**********************')
     print('---------------------------------------------')
-    
-    
-run()

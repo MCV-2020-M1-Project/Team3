@@ -3,7 +3,7 @@ import sys
 from week1 import run_w1 as w1
 from week2 import run_w2 as w2
 from week3 import run_w3 as w3
-from week3 import run_w4 as w4
+from week4 import run_w4 as w4
 
 if __name__=="__main__":
 
