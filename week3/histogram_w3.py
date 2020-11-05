@@ -25,7 +25,7 @@ OPENCV_COLOR_SPACES = {
 
 OPENCV_DISTANCE_METRICS = {
     "Correlation": cv.HISTCMP_CORREL,
-    "Chi-Squared": cv.HISTCMP_CHISQR,
+    "Chi-squared": cv.HISTCMP_CHISQR,
     "Intersection": cv.HISTCMP_INTERSECT,
     "Hellinger": cv.HISTCMP_BHATTACHARYYA
 }
@@ -176,7 +176,7 @@ def compute_histogram_blocks_color(image, text_box, n_bins, color_space, block_s
 
                 n_channels = 1 if color_space == "GRAY" else image.shape[2]
                 # Using 3D histograms --> total_bins = n_bins_per_channel ^ n_channels
-                hist=np.zeros(n_bins**n_channels,dtype=np.float32)
+                # hist=np.zeros(n_bins**n_channels,dtype=np.float32)
 
                 if img_cell_vector.size!=0:
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
@@ -293,6 +293,7 @@ def get_k_images_texture(painting, method_texture, bbdd_histograms, text_box, me
     distances = {}
 
     for bbdd_id, bbdd_hist in bbdd_histograms.items():
+        print(bbdd_id)
         distances[bbdd_id] = cv.compareHist(hist, bbdd_hist, OPENCV_DISTANCE_METRICS[distance_metric])
         # distances[bbdd_id] = metrics.chi2_distance(hist, bbdd_hist)
 

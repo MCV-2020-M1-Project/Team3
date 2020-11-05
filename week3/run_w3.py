@@ -47,10 +47,10 @@ def run():
 
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
-    query_path = 'data/qsd1_w4'
+    query_path = 'data/qsd1_w1'
 
     # Flags to select algorithms
-    bg_removal = True
+    bg_removal = False
     text_detection = False
 
     # Test mode
@@ -105,11 +105,7 @@ def run():
     # bbdd_histograms_texture_DCT = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "DCT", n_bins, color_space, block_size_texture_DCT)
     # bbdd_histograms_texture_WAV = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "WAVELET", n_bins, color_space, block_size_texture_WAV)
     # bbdd_histograms_texture_LBP = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "LBP", n_bins, color_space, block_size_texture_LBP)
-    # bbdd_histograms_texture_HOG = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "HOG", n_bins, color_space, block_size_texture_HOG)
-
-    # pickle.dump(bbdd_histograms_texture_HOG, open('/home/oscar/workspace/master/modules/m1/project/Team3/bbdd_hog.pkl','wb'))
-
-    bbdd_histograms_texture_HOG = pickle.load(open('/home/oscar/workspace/master/modules/m1/project/Team3/bbdd_hog.pkl','rb'))
+    bbdd_histograms_texture_HOG = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "HOG", n_bins, color_space, block_size_texture_HOG)
 
     # bbdd_texture_histograms = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
 

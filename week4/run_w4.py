@@ -1,11 +1,11 @@
 import os
 import sys
-from glob import glob
 import argparse
 import pickle
 
-# import week4.retrieval as retrieval
-# import week4.evaluation as evaluation
+import week4.retrieval as retrieval
+import week4.evaluation as evaluation
+import week4.utils as utils
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -40,8 +40,8 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--use_text', action='store_true',
                         help='use text descriptor')
 
-    parser.add_argument('--color_descriptor', type=str, default='3d_rgb_blocks',
-                        choices=['3d_rgb_blocks', '3d_rgb_multiresolution'],
+    parser.add_argument('--color_descriptor', type=str, default='rgb_3d_blocks',
+                        choices=['rgb_3d_blocks', 'rgb_3d_multiresolution'],
                         help='color descriptor used')
 
     parser.add_argument('--texture_descriptor', type=str, default='dct_blocks',
@@ -58,12 +58,12 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--text_weight', type=float, default=0.0,
                         help='weight for the text descriptor')
 
-    parser.add_argument('--color_metric', type=str, default='Hellinger',
-                        choices=['Hellinger', 'Intersection', 'Chi-Squared', 'Correlation'],
+    parser.add_argument('--color_metric', type=str, default='hellinger',
+                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
                         help='distance metric to compare images')
 
-    parser.add_argument('--texture_metric', type=str, default='Intersection',
-                        choices=['Hellinger', 'Intersection', 'Chi-Squared', 'Correlation'],
+    parser.add_argument('--texture_metric', type=str, default='intersection',
+                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
                         help='distance metric to compare images')
 
     parser.add_argument('--text_metric', type=str, default='Levensthein',
@@ -118,6 +118,9 @@ def args_to_params(args):
             'text': args.remove_text,
             'max_paintings': args.max_paintings
         }
+    if not True in (args.use_color, args.use_texture, args.use_text):
+        sys.error('No descriptor method specified')
+
     return params
 
 def lists_to_params(params, bbdd_list, query_list):
@@ -126,22 +129,6 @@ def lists_to_params(params, bbdd_list, query_list):
         'query': query_list
     }
     return params
-
-def path_to_list(data_path, extension='jpg'):
-    path_list = sorted(glob(os.path.join(data_path,'*.'+extension)))
-    if not path_list:
-        str = 'No .' + extension + ' files found in directory ' + data_path
-        sys.exit(str)
-    return path_list
-
-def load_pickle(pickle_path):
-    with open(pickle_path, 'rb') as f:
-        return pickle.load(f)
-
-def save_pickle(pickle_path, pickle_file):
-    with open(pickle_path, 'wb') as f:
-        return pickle.dump(pickle_file, f)
-    #return None
 
 def run():
     args = parse_args()
@@ -155,17 +142,17 @@ def run():
     # query_path = args.query_path
     # results_path = os.path.join(query_path, 'results')
 
-    bbdd_list = path_to_list(params['paths'].bbdd, extension='jpg')
-    query_list = path_to_list(params['paths'].query, extension='jpg')
+    bbdd_list = utils.path_to_list(params['paths']['bbdd'], extension='jpg')
+    query_list = utils.path_to_list(params['paths']['query'], extension='jpg')
 
     params = lists_to_params(params, bbdd_list, query_list)
 
     # if args.use_text:
-    #     text_list = load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
+    #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
     paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
-    save_pickle(os.path.join(params['paths'].results, 'result.pkl'))
+    utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
     if not args.test:
         evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
