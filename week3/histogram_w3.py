@@ -60,15 +60,15 @@ def compute_hist_color(image, n_bins=8, color_space="RGB"):
 
     return hist
 
-def compute_hist_texture(image, method="DCT"):
-    texture_method = TEXTURE_HISTOGRAM_METHODS[method]
+def compute_hist_texture(image, method_texture):
+    texture_method = TEXTURE_HISTOGRAM_METHODS[method_texture]
     hist = texture_method(image)
     hist = cv.normalize(hist, hist, alpha=0, beta=1,
                         norm_type=cv.NORM_MINMAX)
 
     return hist
 
-def compute_histogram_blocks_texture(image, text_box, n_bins, color_space, block_size):
+def compute_histogram_blocks_texture(image, method_texture, text_box, n_bins, color_space, block_size):
     """
     compute_histogram_blocks()
 
@@ -95,7 +95,7 @@ def compute_histogram_blocks_texture(image, text_box, n_bins, color_space, block
 
             if not text_box:
                 # hist = compute_color_histogram(img_cell, n_bins, color_space)
-                hist = compute_hist_texture(img_cell)
+                hist = compute_hist_texture(img_cell, method_texture)
 
             # If there's a text bounding box ignore the pixels inside it
             else:
@@ -189,12 +189,12 @@ def compute_histogram_blocks_color(image, text_box, n_bins, color_space, block_s
 
     return hist_concat
 
-def compute_multiresolution_histograms_texture(image_path, text_box, n_bins = 8, color_space = "RGB"):
+def compute_multiresolution_histograms_texture(image_path, method_texture, text_box, n_bins = 8, color_space = "RGB"):
     hist_concat = None
     block_sizes = [1, 4, 8, 16]
 
     for block_size in block_sizes:
-        hist = compute_histogram_blocks_texture(image_path, text_box, n_bins, color_space,block_size)
+        hist = compute_histogram_blocks_texture(image_path, method_texture, text_box, n_bins, color_space,block_size)
         if hist_concat is None:
             hist_concat = hist
         else:
@@ -215,15 +215,15 @@ def compute_multiresolution_histograms_color(image_path, text_box, n_bins = 8, c
 
     return hist_concat
 
-def compute_histogram_texture(image_path, text_box, method, n_bins, color_space, block_size):
+def compute_histogram_texture(image_path, text_box, method, method_texture, n_bins, color_space, block_size):
 
     image_id = int(image_path.split('/')[-1].replace('.jpg', '').replace('bbdd_', ''))
     image = cv.imread(image_path)
 
     if method == "M1":
-        hist = compute_histogram_blocks_texture(image, text_box, n_bins, color_space, block_size)
+        hist = compute_histogram_blocks_texture(image, method_texture, text_box, n_bins, color_space, block_size)
     else:
-        hist = compute_multiresolution_histograms_texture(image, text_box, n_bins, color_space)
+        hist = compute_multiresolution_histograms_texture(image, method_texture, text_box, n_bins, color_space)
 
     return hist
 
@@ -239,7 +239,7 @@ def compute_histogram_color(image_path, text_box, method, n_bins, color_space, b
 
     return hist
 
-def compute_bbdd_histograms_texture(bbdd_path, method="M1", n_bins=8, color_space="RGB", block_size=16):
+def compute_bbdd_histograms_texture(bbdd_path, method="M1", method_texture="DCT", n_bins=8, color_space="RGB", block_size=16):
 
     #glob
     bbdd_paths = []
@@ -247,7 +247,7 @@ def compute_bbdd_histograms_texture(bbdd_path, method="M1", n_bins=8, color_spac
         if bbdd_filename.endswith('.jpg'):
             bbdd_paths.append(os.path.join(bbdd_path, bbdd_filename))
 
-    compute_histogram_partial = partial(compute_histogram_texture, text_box=None, method=method,
+    compute_histogram_partial = partial(compute_histogram_texture, text_box=None, method=method, method_texture=method_texture,
                                         n_bins=n_bins, color_space=color_space, block_size=block_size)
 
     processes = 4
@@ -281,14 +281,14 @@ def compute_bbdd_histograms_color(bbdd_path, method="M1", n_bins=8, color_space=
 
     return histograms
 
-def get_k_images_texture(painting, bbdd_histograms, text_box, method="M1", k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", block_size=16):
+def get_k_images_texture(painting, method_texture, bbdd_histograms, text_box, method="M1", k="10", n_bins=8, distance_metric="Hellinger", color_space="RGB", block_size=16):
 
     reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
     if method == "M1":
-        hist = compute_histogram_blocks_texture(painting, text_box, n_bins, color_space, block_size)
+        hist = compute_histogram_blocks_texture(painting, method_texture, text_box, n_bins, color_space, block_size)
     else:
-        hist = compute_multiresolution_histograms_texture(painting, text_box, n_bins, color_space)
+        hist = compute_multiresolution_histograms_texture(painting, method_texture, text_box, n_bins, color_space)
 
     distances = {}
 

@@ -47,10 +47,10 @@ def run():
 
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
-    query_path = 'data/qsd1_w1'
+    query_path = 'data/qsd1_w4'
 
     # Flags to select algorithms
-    bg_removal = False
+    bg_removal = True
     text_detection = False
 
     # Test mode
@@ -58,13 +58,19 @@ def run():
 
     # Parameters
     distance_color = "Hellinger"
-    distance_texture = "Intersection"
+    distance_texture_DCT = "Intersection"
+    distance_texture_WAV = "Hellinger"
+    distance_texture_LBP = "Correlation"
+    distance_texture_HOG = "Hellinger"
 
     block_size_color = 16
-    block_size_texture = 16
+    block_size_texture_DCT = 16
+    block_size_texture_WAV = 8
+    block_size_texture_LBP = 16
+    block_size_texture_HOG = 16
 
     color_space = "RGB"
-    k = 5 # Retrieve k most similar images
+    k = 1 # Retrieve k most similar images
     n_bins = 8 # Number of bins per each histogram channel
     method_compute_hist = "M1"
     method_bg = "M5" # Method to perform background removal
@@ -94,8 +100,16 @@ def run():
     print('**********************')
     print("Computing bbdd histograms...")
 
-    bbdd_histograms_texture = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, n_bins, color_space, block_size_texture)
-    bbdd_histograms_color = hist.compute_bbdd_histograms_color(bbdd_path, method_compute_hist, n_bins, color_space, block_size_color)
+    # bbdd_histograms_color = hist.compute_bbdd_histograms_color(bbdd_path, method_compute_hist, n_bins, color_space, block_size_color)
+
+    # bbdd_histograms_texture_DCT = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "DCT", n_bins, color_space, block_size_texture_DCT)
+    # bbdd_histograms_texture_WAV = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "WAVELET", n_bins, color_space, block_size_texture_WAV)
+    # bbdd_histograms_texture_LBP = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "LBP", n_bins, color_space, block_size_texture_LBP)
+    # bbdd_histograms_texture_HOG = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, "HOG", n_bins, color_space, block_size_texture_HOG)
+
+    # pickle.dump(bbdd_histograms_texture_HOG, open('/home/oscar/workspace/master/modules/m1/project/Team3/bbdd_hog.pkl','wb'))
+
+    bbdd_histograms_texture_HOG = pickle.load(open('/home/oscar/workspace/master/modules/m1/project/Team3/bbdd_hog.pkl','rb'))
 
     # bbdd_texture_histograms = hist.compute_bbdd_histograms_texture(bbdd_path, method_compute_hist, n_bins, color_space, block_size)
 
@@ -159,30 +173,56 @@ def run():
                     text_boxes_image.append([tlx, tly, brx, bry])
 
                     # Retrieves the k most similar images ignoring text bounding boxes
-                    _, distances_texture = hist.get_k_images_texture(painting, bbdd_histograms_texture, text_boxes_image[painting_id],
-                                                    method_compute_hist, k, n_bins, distance_texture, color_space, block_size_texture)
+                    # _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, text_boxes_image[painting_id],
+                    #                                 method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
 
-                    _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, text_boxes_image[painting_id],
-                                                    method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
+                    # _, distances_texture_DCT = hist.get_k_images_texture(painting, "DCT", bbdd_histograms_texture_DCT, text_boxes_image[painting_id],
+                    #                                 method_compute_hist, k, n_bins, distance_texture_DCT, color_space, block_size_texture_DCT)
+
+                    # _, distances_texture_WAV = hist.get_k_images_texture(painting, "WAVELET", bbdd_histograms_texture_WAV, text_boxes_image[painting_id],
+                    #                                 method_compute_hist, k, n_bins, distance_texture_WAV, color_space, block_size_texture_WAV)
+
+                    # _, distances_texture_LBP = hist.get_k_images_texture(painting, "LBP", bbdd_histograms_texture_LBP, text_boxes_image[painting_id],
+                    #                                 method_compute_hist, k, n_bins, distance_texture_LBP, color_space, block_size_texture_LBP)
+
+                    _, distances_texture_HOG = hist.get_k_images_texture(painting, "HOG", bbdd_histograms_texture_HOG, text_boxes_image[painting_id],
+                                                    method_compute_hist, k, n_bins, distance_texture_HOG, color_space, block_size_texture_HOG)
 
                 else:
                     # Retrieves the k most similar images
-                    _, distances_texture = hist.get_k_images_texture(painting, bbdd_histograms_texture, None,
-                                                    method_compute_hist, k, n_bins, distance_texture, color_space, block_size_texture)
-                    _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, None,
-                                                    method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
+                    # _, distances_color = hist.get_k_images_color(painting, bbdd_histograms_color, None,
+                    #                                 method_compute_hist, k, n_bins, distance_color, color_space, block_size_color)
 
-                # reverse = True if distance_color in ("Correlation", "Intersection") else False
+                    # _, distances_texture_DCT = hist.get_k_images_texture(painting, "DCT", bbdd_histograms_texture_DCT, None,
+                    #                                 method_compute_hist, k, n_bins, distance_texture_DCT, color_space, block_size_texture_DCT)
 
-                reverse = False
+                    # _, distances_texture_WAV = hist.get_k_images_texture(painting, "WAVELET", bbdd_histograms_texture_WAV, None,
+                    #                                 method_compute_hist, k, n_bins, distance_texture_WAV, color_space, block_size_texture_WAV)
 
-                color_weight = 0.5
-                texture_weight = 0.5
+                    # _, distances_texture_LBP = hist.get_k_images_texture(painting, "LBP", bbdd_histograms_texture_LBP, None,
+                    #                                 method_compute_hist, k, n_bins, distance_texture_LBP, color_space, block_size_texture_LBP)
+
+                    _, distances_texture_HOG = hist.get_k_images_texture(painting, "HOG", bbdd_histograms_texture_HOG, None,
+                                                    method_compute_hist, k, n_bins, distance_texture_HOG, color_space, block_size_texture_HOG)
+
+
+                reverse = True if distance_texture_HOG in ("Correlation", "Intersection") else False
+
+                # reverse = False
+
+                color_weight = 0.0
+                texture_weight_DCT = 0.0
+                texture_weight_WAV = 1.0
+                # texture_weight_LBP = 0.2
+                # texture_weight_HOG = 0.2
                 text_weight = 0.0
 
                 weighted_distances={}
-                for key in distances_color:
-                    weighted_distances[key]=color_weight*distances_color[key]+texture_weight*1/(distances_texture[key]+1e-7)#+text_weight*distances_text[key]
+                for key in distances_texture_HOG:
+                    # weighted_distances[key]=color_weight*distances_color[key]+texture_weight_DCT*1/(distances_texture_DCT[key]+1e-7)+texture_weight_WAV*distances_texture_WAV[key]+texture_weight_LBP*1/(distances_texture_LBP[key]+1e-7)+texture_weight_HOG*distances_texture_HOG[key]
+                    # weighted_distances[key]=color_weight*distances_color[key]+texture_weight_DCT*1/(distances_texture_DCT[key]+1e-7)+texture_weight_WAV*distances_texture_WAV[key]
+                    # weighted_distances[key]=color_weight*distances_color[key]+texture_weight_DCT*1/(distances_texture_DCT[key]+1e-7)
+                    weighted_distances[key]=distances_texture_HOG[key]
 
                 k_predicted_images = (sorted(weighted_distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
 
