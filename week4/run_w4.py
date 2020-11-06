@@ -31,6 +31,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--remove_text', action='store_true',
                         help='remove text bounding boxes from images')
 
+    parser.add_argument('--remove_noise', action='store_true',
+                        help='remove noise from noisy images')
+
     parser.add_argument('--use_color', action='store_true',
                         help='use color descriptor')
 
@@ -112,11 +115,12 @@ def args_to_params(args):
             'weight': args.text_weight,
             'metric': args.text_metric
         }
-    if args.remove_bg or args.remove_text:
+    if True in (args.remove_bg, args.remove_text, args.remove_noise):
         params['remove'] = {
             'bg': args.remove_bg,
+            'max_paintings': args.max_paintings,
             'text': args.remove_text,
-            'max_paintings': args.max_paintings
+            'noise': args.remove_noise
         }
     if not True in (args.use_color, args.use_texture, args.use_text):
         sys.error('No descriptor method specified')
@@ -137,11 +141,6 @@ def run():
 
     k = args.map_k
 
-    # # Path to bbdd and query datasets
-    # bbdd_path = args.bbdd_path
-    # query_path = args.query_path
-    # results_path = os.path.join(query_path, 'results')
-
     bbdd_list = utils.path_to_list(params['paths']['bbdd'], extension='jpg')
     query_list = utils.path_to_list(params['paths']['query'], extension='jpg')
 
@@ -156,18 +155,17 @@ def run():
 
     if not args.test:
         evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
-    
-    
-    
+
+
+
 # from week4 import sift
 # def get_corners():
 #     query_path = 'data/qsd1_w4'
-# 
+#
 #     image_path = query_path + '/00000.jpg'
-# 
+#
 #     sift.sift_corner_detection(image_path)
-# 
-# 
+#
+#
 # def run():
 #     get_corners()
-

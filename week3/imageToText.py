@@ -6,7 +6,7 @@ import cv2 as cv
 import jellyfish as jel
 import os
 
-
+from string import ascii_letters, digits
 
 def get_bbdd_texts(bbdd_path):
     bbdd_texts = {}
@@ -36,12 +36,16 @@ def get_text(img, text_box):
         roi=img[tl_y:br_y,tl_x:br_x]
         gray=cv.cvtColor(roi,cv.COLOR_BGR2GRAY)
         thld,bw=cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
-        text = tess.image_to_string(bw).strip().lower() # removes the end whitespaces and lower to ignore case
+        text = tess.image_to_string(bw)
     else:
         text="box not found"
 
-    print(text)
-    return text
+    special_chars = [c for c in set(text).difference(ascii_letters + digits + ' ')]
+    text_filtered = ''.join((filter(lambda s: s not in special_chars, text)))
+    final_text = ' '.join(text_filtered.split())
+
+    print(f'Text before: {text} --> Text filtered: {final_text}')
+    return final_text
 
 def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
     if distance_metric=="Levensthein":
@@ -66,7 +70,7 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
         if bbdd_text!='empty':
             bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
-            distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric)
+            distances[bbdd_id] = get_text_distance(text.lower(), bbdd_text.split(",",1)[0].strip(),distance_metric)
 
         else:
             distances[bbdd_id]=100
@@ -77,15 +81,3 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
 
     return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
-
-
-
-# ##----TEST AREA----
-# img = cv.imread("data/qsd1_w2/00000.jpg")
-# roi = [105,0,574,110]
-# bbdd_path='data/BBDD/'
-
-# bbdd_texts=get_bbdd_texts(bbdd_path)
-
-# predicted_paintings = get_k_images(img,roi,bbdd_texts)
-# print(predicted_paintings)

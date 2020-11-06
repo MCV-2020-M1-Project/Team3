@@ -3,6 +3,8 @@ import operator
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
+
+from skimage import feature
 from scipy.fftpack import dct, idct
 
 import multiprocessing.dummy as mp
@@ -57,8 +59,8 @@ def lbp_histogram(img):
 
     lbp = feature.local_binary_pattern(gray, num_points, radius, method="uniform")
 
-    hist = cv.calcHist([lbp.astype(np.uint8)], [0], None, [numPoints + 2],
-                       [0, numPoints + 2])
+    hist = cv.calcHist([lbp.astype(np.uint8)], [0], None, [num_points + 2],
+                       [0, num_points + 2])
 
     hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
                         norm_type=cv.NORM_MINMAX)
