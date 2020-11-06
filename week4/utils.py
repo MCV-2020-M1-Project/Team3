@@ -2,6 +2,9 @@ import os
 import sys
 import pickle
 from glob import glob
+from week4 import feature_descriptors as fd
+import cv2 as cv
+import numpy as np
 
 def path_to_list(data_path, extension='jpg'):
     path_list = sorted(glob(os.path.join(data_path,'*.'+extension)))
@@ -137,3 +140,14 @@ def inverse_zigzag(input, vmax, hmax):
             break
 
     return output
+
+def draw_matches(img1, img2, threshold=400):
+    kp1, des1 = fd.surf_descriptor(img1, threshold)
+    kp2, des2 = fd.surf_descriptor(img2, threshold)
+
+    matches = fd.match_descriptors(des1, des2)
+    img_matches = np.empty((max(img1.shape[0], img2.shape[0]), img1.shape[1] + img2.shape[1], 3), dtype=np.uint8)
+    cv.drawMatches(img1, kp1, img2, kp2, matches, img_matches)
+    # -- Show detected matches
+    cv.imshow('Matches', img_matches)
+    cv.waitKey()

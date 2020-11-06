@@ -24,18 +24,5 @@ def match_descriptors(d1, d2, type='BRUTE'):
 
     return matches
 
-def draw_matches(img1, img2, threshold=400):
-    kp1, des1 = surf_descriptor(img1, threshold)
-    kp2, des2 = surf_descriptor(img2, threshold)
-    img_gray1 = cv.cvtColor(img1, cv.COLOR_BGR2GRAY)
-    img_gray2 = cv.cvtColor(img2, cv.COLOR_BGR2GRAY)
-
-    matches = match_descriptors(des1, des2)
-    img_matches = np.empty((max(img_gray1.shape[0], img_gray2.shape[0]), img_gray1.shape[1] + img_gray2.shape[1], 3), dtype=np.uint8)
-    cv.drawMatches(img_gray1, kp1, img_gray2, kp2, matches, img_matches)
-    # -- Show detected matches
-    cv.imshow('Matches', img_matches)
-    cv.waitKey()
-
 
 
