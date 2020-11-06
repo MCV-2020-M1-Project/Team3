@@ -68,7 +68,8 @@ def compute_hist_texture(image, method_texture):
 
     return hist
 
-def compute_histogram_blocks_texture(image, method_texture, text_box, n_bins, color_space, block_size):
+def compute_histogram_blocks(image, text_box, n_bins, color_space, block_size,color=True):
+
     """
     compute_histogram_blocks()
 
@@ -94,8 +95,10 @@ def compute_histogram_blocks_texture(image, method_texture, text_box, n_bins, co
             img_cell = image[int(i*sizeY/block_size):int(i*sizeY/block_size) + int(sizeY/block_size) ,int(j*sizeX/block_size):int(j*sizeX/block_size) + int(sizeX/block_size)]
 
             if not text_box:
-                # hist = compute_color_histogram(img_cell, n_bins, color_space)
-                hist = compute_hist_texture(img_cell, method_texture)
+                if color:
+                    hist = compute_color_histogram(img_cell, n_bins, color_space)
+                else:
+                    hist = compute_texture_histogram(img_cell)
 
             # If there's a text bounding box ignore the pixels inside it
             else:
@@ -119,8 +122,11 @@ def compute_histogram_blocks_texture(image, method_texture, text_box, n_bins, co
 
                 if img_cell_vector.size!=0:
                     img_cell_matrix = np.reshape(img_cell_vector,(img_cell_vector.shape[0],1,-1))
-                    # hist = compute_color_histogram(img_cell_matrix, n_bins, color_space)
-                    hist = compute_histogram_texture(img_cell_matrix)
+                    
+                    if color:
+                        hist = compute_color_histogram(img_cell_matrix, n_bins, color_space)
+                    else: 
+                        hist = compute_texture_histogram(img_cell_matrix)
 
             if hist_concat is None:
                 hist_concat = hist
@@ -233,9 +239,9 @@ def compute_histogram_color(image_path, text_box, method, n_bins, color_space, b
     image = cv.imread(image_path)
 
     if method == "M1":
-        hist = compute_histogram_blocks_color(image, text_box, n_bins, color_space, block_size)
+        hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size,True)
     else:
-        hist = compute_multiresolution_histograms_color(image, text_box, n_bins, color_space)
+        hist = compute_histogram_blocks(image, text_box, n_bins, color_space, block_size, False)
 
     return hist
 
@@ -307,9 +313,9 @@ def get_k_images_color(painting, bbdd_histograms, text_box, method="M1", k="10",
     reverse = True if distance_metric in ("Correlation", "Intersection") else False
 
     if method == "M1":
-        hist = compute_histogram_blocks_color(painting, text_box, n_bins, color_space, block_size)
+        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size,color=True)
     else:
-        hist = compute_multiresolution_histograms_color(painting, text_box, n_bins, color_space)
+        hist = compute_histogram_blocks(painting, text_box, n_bins, color_space, block_size,color=False)
 
     distances = {}
 
@@ -319,4 +325,4 @@ def get_k_images_color(painting, bbdd_histograms, text_box, method="M1", k="10",
 
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=reverse))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images], distances
+    return [predicted_image[0] for predicted_image in k_predicted_images],distances

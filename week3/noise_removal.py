@@ -49,6 +49,7 @@ def denoise_image_wavelet2(image, wavelet='bior2.8', level=3):
 
 # --------------------------------------
 
+
 def readImages(path,extension):
     imagenes = dict()
     for filename in sorted(os.listdir(path)):
@@ -77,5 +78,15 @@ def denoiseImage(img):
     psnr = PSNR(img, gaussiana)
     if psnr < 33:
         img = gaussiana
-
+        
     return img
+
+
+"""path = "../data/qsd1_w3"
+imagenes = readImages(path,".jpg")
+
+for img in imagenes:
+    imagenes[img] = denoiseImage(imagenes[img],img)
+    #cv2.imshow(img,imagenes[img])
+    cv2.imwrite("../data/filtradas/"+img+".jpg",imagenes[img])
+cv2.waitKey()"""

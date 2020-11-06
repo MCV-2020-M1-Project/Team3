@@ -32,8 +32,14 @@ def get_text(img, text_box):
     br_x=text_box[2]
     br_y=text_box[3]
 
-    roi=img[tl_y:br_y,tl_x:br_x]
-    text = tess.image_to_string(roi).strip().lower() # removes the end whitespaces and lower to ignore case
+    if text_box!=[0, 0, 0, 0]:
+        roi=img[tl_y:br_y,tl_x:br_x]
+        gray=cv.cvtColor(roi,cv.COLOR_BGR2GRAY)
+        thld,bw=cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+        text = tess.image_to_string(bw).strip().lower() # removes the end whitespaces and lower to ignore case
+    else:
+        text="box not found"
+
     print(text)
     return text
 
@@ -69,7 +75,8 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
     author_images = [key for key in distances if distances[key] == min_distance]
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
 
-    return [predicted_image[0] for predicted_image in k_predicted_images], author_images
+
+    return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
 
 
 
