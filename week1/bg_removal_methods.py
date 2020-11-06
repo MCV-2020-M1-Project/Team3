@@ -236,6 +236,8 @@ def get_mask_M4(image):
     # cv.imshow('mask', mask)
     # cv.waitKey(0)
 
+    print('---- {}'.format(len(paintings_coords)))
+
     return [mask, paintings_coords]
 
 # -------Week 4 bg removal-----------
@@ -385,7 +387,8 @@ def get_mask_M5(image):
     print("Obtaining masks")
 
     [mask, paintings_coords] = pbm_segmentation(image)
-    # filled_mask = fill_mask(mask, paintings_coords)
+
+    # mask = fill_mask(mask, paintings_coords)
 
     return [mask, paintings_coords]
 

@@ -5,7 +5,10 @@ import cv2 as cv
 import numpy as np
 import operator
 
+from tqdm import tqdm
+
 import week3.imageToText as itt
+
 import week3.histogram_w3 as hist
 import week1.masks as masks
 import week1.evaluation as evaluation
@@ -39,9 +42,10 @@ TEXTURE_DESCRIPTORS_DISTANCES = {
     # # Then in compute_bbdd_histograms function (for example) we can only pass the params struct
     # # and check if a descriptor is needed (e.g. if params["texture"] is not None) and then access to the param
     # # values like params["texture"]["descriptor"]
-    ## ---------------------------
+
 def run():
     print('---------------------------------------------')
+
 
     # Path to bbdd and query datasets
     bbdd_path = 'data/BBDD'
@@ -167,6 +171,7 @@ def run():
 
             # For each painting
             for painting_id, painting in enumerate(paintings):
+
                 # First we denoise the painting
                 painting=nr.denoiseImage(painting)
                 # painting=nr.denoise_image_wavelet1(painting)
@@ -264,15 +269,14 @@ def run():
                         print('        {} most similar images: {}'.format(k, predicted_paintings_per_image[painting_id]))
                     else:
                         print('        Painting not detected!!')
+                        predicted_paintings_per_image.append([0,0,0,0,0])
 
                 print('----------------------')
                 groundtruth_paintings_list.append(groundtruth_paintings[image_id])
                 
-     
-                
-                
 
     #-------EVALUATION AREA----------
+
     if not test:
 
         # Adapt the format of the "gt_corresps.pkl" to be able to evaluate the results...

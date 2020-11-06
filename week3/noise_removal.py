@@ -78,7 +78,7 @@ def denoiseImage(img):
     psnr = PSNR(img, gaussiana)
     if psnr < 33:
         img = gaussiana
-    
+        
     return img
 
 

@@ -21,7 +21,7 @@ def get_bbdd_texts(bbdd_path):
                 bbdd_text='empty'
             bbdd_texts[image_id] = bbdd_text
 
-            
+
     return bbdd_texts
 
 
@@ -39,23 +39,23 @@ def get_text(img, text_box):
         text = tess.image_to_string(bw).strip().lower() # removes the end whitespaces and lower to ignore case
     else:
         text="box not found"
+
     print(text)
     return text
 
 def get_text_distance(text_1,text_2,distance_metric="Levensthein"):
     if distance_metric=="Levensthein":
         distance=jel.levenshtein_distance(text_1,text_2)
-        
+
     elif distance_metric=="Hamming":
         distance=jel.hamming_distance(text_1,text_2)
-        
+
     elif distance_metric=="Damerau":
         distance=jel.damerau_levenshtein_distance(text_1,text_2)
 
     else:
         print('Metric doesn\'t exist')
     return distance
-        
 
 def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"):
 
@@ -63,26 +63,25 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
     distances = {}
 
     for bbdd_id, bbdd_text in bbdd_texts.items():
-        
+
         if bbdd_text!='empty':
             bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
             distances[bbdd_id] = get_text_distance(text, bbdd_text.split(",",1)[0].strip(),distance_metric)
-        
+
         else:
             distances[bbdd_id]=100
-    
-    min_distance = min(distances.values()) 
-    author_images = [key for key in distances if distances[key] == min_distance]        
+
+    min_distance = min(distances.values())
+    author_images = [key for key in distances if distances[key] == min_distance]
     k_predicted_images = (sorted(distances.items(), key=operator.itemgetter(1), reverse=False))[:k]
 
 
     return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
 
-        
 
 
 # ##----TEST AREA----
-# img = cv.imread("data/qsd1_w2/00000.jpg") 
+# img = cv.imread("data/qsd1_w2/00000.jpg")
 # roi = [105,0,574,110]
 # bbdd_path='data/BBDD/'
 
@@ -90,4 +89,3 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
 # predicted_paintings = get_k_images(img,roi,bbdd_texts)
 # print(predicted_paintings)
-
