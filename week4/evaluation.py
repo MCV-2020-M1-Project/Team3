@@ -17,8 +17,6 @@ def mask_evaluation(mask_path, groundtruth_path):
     Function to evaluate a mask at a pixel level...
     """
 
-    print(f'{mask_path} -> {groundtruth_path}')
-
     mask = cv.imread(mask_path,0) / 255
     mask_vector = mask.reshape(-1)
 
@@ -136,8 +134,8 @@ def output_predicted_paintings(query_list, paintings_predicted_list, paintings_g
     for query_image_path in query_list:
         image_id = utils.get_image_id(query_image_path)
 
-        paintings_predicted_image = paintings_predicted_list[image_id]
-        paintings_groundtruth_image = paintings_groundtruth_list[image_id]
+        paintings_predicted_image = paintings_predicted_list[int(image_id)]
+        paintings_groundtruth_image = paintings_groundtruth_list[int(image_id)]
 
         print(f'Image: {query_image_path}')
 
@@ -190,16 +188,27 @@ def evaluate(paintings_predicted_list, params, k_list, verbose=False):
         groundtruth_paintings_list_eval = []
         predicted_paintings_list_eval = []
 
-        if 'qsd2_w2' in params['paths']['query'] or 'qsd2_w3' in params['paths']['query']:
-            for groundtruth_paintings_per_image in paintings_groundtruth_list:
-                for groundtruth_painting in groundtruth_paintings_per_image:
-                    groundtruth_paintings_list_eval.append([groundtruth_painting])
-        else:
+        if 'qsd2_w1' in params['paths']['query']:
             groundtruth_paintings_list_eval = paintings_groundtruth_list
 
-        for predicted_paintings_per_image in paintings_predicted_list:
-            for predicted_paintings_per_painting in predicted_paintings_per_image:
-                predicted_paintings_list_eval.append(predicted_paintings_per_painting)
+            for predicted_paintings_per_image in paintings_predicted_list:
+                for predicted_paintings_per_painting in predicted_paintings_per_image:
+                    predicted_paintings_list_eval.append(predicted_paintings_per_painting)
+
+        else:
+            for image_id, groundtruth_paintings_per_image in enumerate(paintings_groundtruth_list):
+                predicted_paintings_per_image = paintings_predicted_list[image_id]
+                for painting_id, groundtruth_painting in enumerate(groundtruth_paintings_per_image):
+                    groundtruth_paintings_list_eval.append([groundtruth_painting])
+                    if len(predicted_paintings_per_image) > painting_id:
+                        predicted_painting = predicted_paintings_per_image[painting_id]
+                    else:
+                        predicted_painting = [-1]
+
+                    predicted_paintings_list_eval.append(predicted_painting)
+
+        # print(f'GT: {len(groundtruth_paintings_list_eval)} -> {groundtruth_paintings_list_eval}')
+        # print(f'Pred: {len(predicted_paintings_list_eval)} -> {predicted_paintings_list_eval}')
 
         print('**********************')
         print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)))
