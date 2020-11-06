@@ -259,7 +259,7 @@ def get_mask_M6(img):
     # loop over the contours
    
     mask = np.zeros(gray.shape)
-    paintings_coords = []
+   
     # loop over the contours from bigger to smaller, and find the biggest one with the right orientation
     for c in cnts:
           # # approximate to the rectangle
@@ -267,8 +267,68 @@ def get_mask_M6(img):
           # cv.rectangle(image, (x, y), (x + w, y + h), (36,255,12), 3)
           if w > gray.shape[1]/8 and h > gray.shape[0]/6:
               mask[y:y+h,x:x+w]=255 # fill the mask
-              paintings_coords.append([x,y,x+w,y+h])
               
+    found = False
+    mask = cv.convertScaleAbs(mask)
+    cnts = cv.findContours(mask.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    
+    paintings_coords_aux = []
+    for c in cnts:
+          # # approximate to the rectangle
+          x, y, w, h = cv.boundingRect(c)
+          paintings_coords_aux.append([x,y,x+w,y+h])  
+          found = True
+          
+    # paintings_coords = []      
+    # if not found:
+    #     paintings_coords.append([0,0,img.shape[1],img.shape[0]])
+
+    # else:
+    #     if len(paintings_coords_aux) == 2:
+    #         tlx1 = paintings_coords_aux[0][0]
+    #         tly1 = paintings_coords_aux[0][1]
+    #         brx1 = paintings_coords_aux[0][2]
+    #         bry1 = paintings_coords_aux[0][3]
+
+    #         tlx2 = paintings_coords_aux[1][0]
+    #         tly2 = paintings_coords_aux[1][1]
+    #         brx2 = paintings_coords_aux[1][2]
+    #         bry2 = paintings_coords_aux[1][3]
+            
+    #         if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
+    #             paintings_coords.append(paintings_coords_aux[0])
+    #             paintings_coords.append(paintings_coords_aux[1])
+    #         else:
+    #             paintings_coords.append(paintings_coords_aux[1])
+    #             paintings_coords.append(paintings_coords_aux[0])
+    #     elif len(paintings_coords_aux)==3:
+    #         tlx1 = paintings_coords_aux[0][0]
+    #         tly1 = paintings_coords_aux[0][1]
+    #         brx1 = paintings_coords_aux[0][2]
+    #         bry1 = paintings_coords_aux[0][3]
+
+    #         tlx2 = paintings_coords_aux[1][0]
+    #         tly2 = paintings_coords_aux[1][1]
+    #         brx2 = paintings_coords_aux[1][2]
+    #         bry2 = paintings_coords_aux[1][3]
+            
+    #         tlx3 = paintings_coords_aux[2][0]
+    #         tly3 = paintings_coords_aux[2][1]
+    #         brx3 = paintings_coords_aux[2][2]
+    #         bry3 = paintings_coords_aux[2][3]
+            
+    #         if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
+    #             paintings_coords.append(paintings_coords_aux[0])
+    #             paintings_coords.append(paintings_coords_aux[1])
+    #         else:
+    #             paintings_coords.append(paintings_coords_aux[1])
+    #             paintings_coords.append(paintings_coords_aux[0])
+            
+    #     else:
+    #         paintings_coords.append(paintings_coords_aux[0])     
+            
+            
     #to test and being able to see it on screen
     # resized = mask.copy()
     # image = imutils.resize(image,height=500)
@@ -280,7 +340,7 @@ def get_mask_M6(img):
     # cv.imshow("mask", resized)
     # cv.waitKey()
     
-    return [mask, paintings_coords]
+    return [mask, paintings_coords_aux]
 
 
 
