@@ -6,6 +6,7 @@ import pickle
 import week4.retrieval as retrieval
 import week4.evaluation as evaluation
 import week4.utils as utils
+from week4 import sift
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -82,6 +83,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
 
+    parser.add_argument('--sift', action='store_true',
+                        help='use SIFT to predict images')
+
     args = parser.parse_args(args)
     return args
 
@@ -148,6 +152,10 @@ def run():
 
     # if args.use_text:
     #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
+
+    if args.sift:
+        match_dict = sift.process_query(query_list, bbdd_list)
+
 
     paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 

@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 import ntpath
 from matplotlib import pyplot as plt
+from collections import defaultdict
 
 def sift_corner_detection(image_path, db_image_path):
 
@@ -39,3 +40,11 @@ def sift_corner_detection(image_path, db_image_path):
         return False
 
     
+def process_query(query_list, bbdd_list):
+    match_dict = defaultdict(list)
+    for query_image in query_list:
+        for db_image in bbdd_list:
+            if sift_corner_detection(query_image, db_image):
+                match_dict[query_image].append(db_image)
+
+    return match_dict
