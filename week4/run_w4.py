@@ -86,6 +86,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--sift', action='store_true',
                         help='use SIFT to predict images')
 
+    parser.add_argument('--surf', action='store_true',
+                        help='use SURF to predict images')
+
     args = parser.parse_args(args)
     return args
 
@@ -164,9 +167,10 @@ def run():
     if not args.test:
         evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
 
-    qm = retrieval.get_top_matches(query_list, bbdd_list, k=max(k), threshold=5000)
+    if args.surf:
+        qm = retrieval.get_top_matches(query_list, bbdd_list, k=max(k), threshold=1000)
+        evaluation.evaluate(qm, params, k, verbose=args.verbose)
 
-    evaluation.evaluate(qm, params, k, verbose=args.verbose)
 # from week4 import sift
 # def get_corners():
 #     query_path = 'data/qsd1_w4'

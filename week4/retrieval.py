@@ -124,27 +124,33 @@ def get_top_matches(query_list, bbdd_list, k = 5, threshold = 400):
             dist += m.distance
         return dist/len(matches)
 
-    bbdd_surf = []
-    for bbdd_filename in bbdd_list:
-        im = cv.imread(bbdd_filename)
-        bbdd_surf.append(fd.surf_descriptor(im, threshold))
-
-    query_matches = []
+    query_surf = []
     for query in query_list:
         im = cv.imread(query)
-        kp, des = fd.surf_descriptor(im, threshold)
-        matching = []
-        if len(kp) > 0:
-            for bbddkpdes in bbdd_surf:
-                bd_kp, bd_des = bbddkpdes
-                if len(bd_kp) > 0:
-                    matches = fd.match_descriptors(des, bd_des)
-                    if len(matches) > 2:
-                        matching.append([bbdd_surf.index(bbddkpdes), matches])
-                matching.sort(key=lambda x: calculate_distance(x[1]))
-            if len(matching) == 0:
-                query_matches.append(-1)
-            else:
-                query_matches.append(matching[:k])
+        query_surf.append(fd.surf_descriptor(im, threshold))
 
-    return query_matches
+    query_matches = []
+    for bbdd in bbdd_list:
+        im = cv.imread(bbdd)
+        kp, des = fd.surf_descriptor(im, threshold)
+        if len(kp) > 0:
+            for qkpdes in query_surf:
+                q_kp, q_des = qkpdes
+                if len(q_kp) > 0:
+                    matches = fd.match_descriptors(q_des, des)
+                    if len(matches) > 2:
+                        idx = query_surf.index(qkpdes)
+                        if idx in range(len(query_matches)):
+                            query_matches[idx].append([bbdd_list.index(bbdd), matches])
+                        else:
+                            query_matches.append([[bbdd_list.index(bbdd), matches]])
+
+    results = []
+    for item in query_matches:
+        item.sort(key=lambda x: calculate_distance(x[1]))
+        if len(item) == 0:
+            results.append([-1])
+        else:
+            results.append(item[:k])
+
+    return results
