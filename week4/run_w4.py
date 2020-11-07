@@ -6,6 +6,7 @@ import pickle
 import week4.retrieval as retrieval
 import week4.evaluation as evaluation
 import week4.utils as utils
+from week4 import sift
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -31,6 +32,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--remove_text', action='store_true',
                         help='remove text bounding boxes from images')
 
+    parser.add_argument('--remove_noise', action='store_true',
+                        help='remove noise from noisy images')
+
     parser.add_argument('--use_color', action='store_true',
                         help='use color descriptor')
 
@@ -46,7 +50,7 @@ def parse_args(args=sys.argv[2:]):
 
     parser.add_argument('--texture_descriptor', type=str, default='dct_blocks',
                         choices=['dct_blocks', 'dct_multiresolution', 'lbp_blocks', 'lbp_multiresolution',
-                                 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
+                                 'hog', 'wavelet', 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
                         help='texture descriptor used')
 
     parser.add_argument('--color_weight', type=float, default=0.33,
@@ -59,11 +63,11 @@ def parse_args(args=sys.argv[2:]):
                         help='weight for the text descriptor')
 
     parser.add_argument('--color_metric', type=str, default='hellinger',
-                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
+                        choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
-    parser.add_argument('--texture_metric', type=str, default='intersection',
-                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
+    parser.add_argument('--texture_metric', type=str, default='correlation',
+                        choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
     parser.add_argument('--text_metric', type=str, default='Levensthein',
@@ -78,6 +82,9 @@ def parse_args(args=sys.argv[2:]):
 
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
+
+    parser.add_argument('--sift', action='store_true',
+                        help='use SIFT to predict images')
 
     args = parser.parse_args(args)
     return args
@@ -112,11 +119,12 @@ def args_to_params(args):
             'weight': args.text_weight,
             'metric': args.text_metric
         }
-    if args.remove_bg or args.remove_text:
+    if True in (args.remove_bg, args.remove_text, args.remove_noise):
         params['remove'] = {
             'bg': args.remove_bg,
+            'max_paintings': args.max_paintings,
             'text': args.remove_text,
-            'max_paintings': args.max_paintings
+            'noise': args.remove_noise
         }
     if not True in (args.use_color, args.use_texture, args.use_text):
         sys.error('No descriptor method specified')
@@ -137,11 +145,6 @@ def run():
 
     k = args.map_k
 
-    # # Path to bbdd and query datasets
-    # bbdd_path = args.bbdd_path
-    # query_path = args.query_path
-    # results_path = os.path.join(query_path, 'results')
-
     bbdd_list = utils.path_to_list(params['paths']['bbdd'], extension='jpg')
     query_list = utils.path_to_list(params['paths']['query'], extension='jpg')
 
@@ -150,24 +153,28 @@ def run():
     # if args.use_text:
     #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
+    if args.sift:
+        match_dict = sift.process_query(query_list, bbdd_list)
+
+
     paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
     utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
     if not args.test:
         evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
-    
-    
-    
+
+    qm = retrieval.get_top_matches(query_list, bbdd_list, k=max(k), threshold=5000)
+
+    evaluation.evaluate(qm, params, k, verbose=args.verbose)
 # from week4 import sift
 # def get_corners():
 #     query_path = 'data/qsd1_w4'
-# 
+#
 #     image_path = query_path + '/00000.jpg'
-# 
+#
 #     sift.sift_corner_detection(image_path)
-# 
-# 
+#
+#
 # def run():
 #     get_corners()
-
