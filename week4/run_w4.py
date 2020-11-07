@@ -49,7 +49,7 @@ def parse_args(args=sys.argv[2:]):
 
     parser.add_argument('--texture_descriptor', type=str, default='dct_blocks',
                         choices=['dct_blocks', 'dct_multiresolution', 'lbp_blocks', 'lbp_multiresolution',
-                                 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
+                                 'hog', 'wavelet', 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
                         help='texture descriptor used')
 
     parser.add_argument('--color_weight', type=float, default=0.33,
@@ -62,11 +62,11 @@ def parse_args(args=sys.argv[2:]):
                         help='weight for the text descriptor')
 
     parser.add_argument('--color_metric', type=str, default='hellinger',
-                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
+                        choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
-    parser.add_argument('--texture_metric', type=str, default='intersection',
-                        choices=['hellinger', 'intersection', 'chi-Squared', 'correlation'],
+    parser.add_argument('--texture_metric', type=str, default='correlation',
+                        choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
     parser.add_argument('--text_metric', type=str, default='Levensthein',

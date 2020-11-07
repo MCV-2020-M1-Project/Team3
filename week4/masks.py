@@ -95,8 +95,6 @@ def get_bg_mask(img, max_paintings):
     return [mask, paintings_coords]
 
 def remove_bg(img, params, image_id):
-    #We need to fix it
-    # [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'])
     [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'])
 
     result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')

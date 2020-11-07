@@ -19,7 +19,7 @@ def image_to_paintings(image_path, params):
     image_id = utils.get_image_id(image_path)
 
     paintings=[img]
-    
+
     text_boxes=[None]
     if params['remove'] is not None:
         if params['remove']['bg']:
@@ -47,12 +47,9 @@ def get_k_images(params, k):
         [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
                                                   [path for path in params['lists']['query']]),
                                                   total=len(params['lists']['query']))))
-        print('-> Done!')
-
         all_distances = []
 
         if params['color'] is not None:
-
             compute_bbdd_histograms_partial = partial(histograms.compute_bbdd_histograms,
                                                       descriptor=params['color']['descriptor'])
 
@@ -60,8 +57,8 @@ def get_k_images(params, k):
             bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
                                               [path for path in params['lists']['bbdd']]),
                                               total=len(params['lists']['bbdd'])))
-            print('-> Done!')
 
+            print('---Computing color query_histograms and distances---')
             color_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
                                                            descriptor=params['color']['descriptor'],
                                                            metric=params['color']['metric'],
@@ -69,20 +66,19 @@ def get_k_images(params, k):
             all_distances.append(color_distances)
 
         if params['texture'] is not None:
-            print('...Computing texture histograms and distances...')
-
             compute_bbdd_histograms_partial = partial(histograms.compute_bbdd_histograms,
                                                       descriptor=params['texture']['descriptor'])
 
+            print('...Computing texture bbdd_histograms...')
             bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
                                               [path for path in params['lists']['bbdd']]),
                                               total=len(params['lists']['bbdd'])))
 
+            print('---Computing texture query_histograms and distances---')
             texture_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
                                                            descriptor=params['texture']['descriptor'],
                                                            metric=params['texture']['metric'],
                                                            weight=params['texture']['weight'])
-            print('Done!')
 
             all_distances.append(texture_distances)
 
@@ -102,7 +98,6 @@ def get_k_images(params, k):
         #                                                    metric=params['text'].metric,
         #                                                    weight=params.['text'].weight)
         #
-        #     print('Done!')
         #
         #     all_distances.append(text_distances)
 

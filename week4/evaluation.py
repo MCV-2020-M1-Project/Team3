@@ -180,9 +180,6 @@ def evaluate(paintings_predicted_list, params, k_list, verbose=False):
         output_predicted_paintings(params['lists']['query'], paintings_predicted_list, paintings_groundtruth_list, max(k_list))
 
     for k in k_list:
-    #     map = mlm.mapk(paintings_predicted_list, paintings_groundtruth_list, k)
-    #     print(f'MAP@{k}: {map}')
-
 
         # Adapt the format of the "gt_corresps.pkl" to be able to evaluate the results...
         groundtruth_paintings_list_eval = []
@@ -207,8 +204,5 @@ def evaluate(paintings_predicted_list, params, k_list, verbose=False):
 
                     predicted_paintings_list_eval.append(predicted_painting)
 
-        # print(f'GT: {len(groundtruth_paintings_list_eval)} -> {groundtruth_paintings_list_eval}')
-        # print(f'Pred: {len(predicted_paintings_list_eval)} -> {predicted_paintings_list_eval}')
-
         print('**********************')
-        print("MAP@{}: {}".format(k, mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)))
+        print(f'MAP@{k}: {mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)}')
