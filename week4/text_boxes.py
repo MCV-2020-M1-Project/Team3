@@ -3,6 +3,8 @@ import numpy as np
 import imutils
 import os
 
+import week4.utils as utils
+
 def compute_score(rect, img):
     img_height = img.shape[0]
     img_width = img.shape[1]
@@ -190,6 +192,7 @@ def remove_text(paintings, paintings_coords, params, image_id):
             text_box = [tlx, tly, brx, bry]
         else:
             text_box = None
+
         text_boxes_shift.append(text_box)
 
     return [paintings, text_boxes, text_boxes_shift]

@@ -2,6 +2,7 @@ import os
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
+import os
 
 import multiprocessing.dummy as mp
 from functools import partial
@@ -14,6 +15,7 @@ import week4.noise_removal as noise
 import week4.utils as utils
 import week4.feature_descriptors as feature_descriptors
 import week4.sift as sift
+import week4.image_to_text as text_detection
 
 def image_to_paintings(image_path, params):
     img = cv.imread(image_path)
@@ -30,9 +32,18 @@ def image_to_paintings(image_path, params):
             paintings = noise.denoise_paintings(paintings, params, image_id)
 
         if params['remove']['text']:
-            [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+
+            [paintings, text_boxes] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+            for idx,painting in paintings:
+                text_detected=text_detection(painting,text_boxes[idx])
+                predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
+                f = open(predicted_text_path,"a+")
+                f.write(text_detected+"\n")
+                f.close()
+   [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
 
     return [paintings, text_boxes, text_boxes_shift]
+
 
 def get_k_images(params, k):
 
@@ -49,7 +60,9 @@ def get_k_images(params, k):
                                                   [path for path in params['lists']['query']]),
                                                   total=len(params['lists']['query']))))
 
+
         utils.save_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'), text_boxes_shift)
+
 
         all_distances = []
 
@@ -152,6 +165,19 @@ def get_k_images(params, k):
         #
         #
         #     all_distances.append(text_distances)
+
+        if params['text'] is not None:
+            print('...Computing text histograms and distances...')
+       
+            bbdd_texts = text_detection.get_bbdd_texts(params['paths']['bbdd'])
+                    
+            text_distances = text_detection.compute_distances(paintings, text_boxes, bbdd_texts,
+                                                            descriptor=params['text'],
+                                                            metric=params['text']['metric'],
+                                                            weight=params['text']['weight'])
+            
+        
+            all_distances.append(text_distances)
 
         for q in range(len(paintings)):
             qlist = []
