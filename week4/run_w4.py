@@ -6,7 +6,6 @@ import pickle
 import week4.retrieval as retrieval
 import week4.evaluation as evaluation
 import week4.utils as utils
-from week4 import sift
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -83,8 +82,14 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
 
-    parser.add_argument('--sift', action='store_true',
+    parser.add_argument('--use_sift', action='store_true',
                         help='use SIFT to predict images')
+
+    parser.add_argument('--use_orb', action='store_true',
+                        help='use ORB to predict images')
+
+    parser.add_argument('--use_surf', action='store_true',
+                        help='use SURF to predict images')
 
     args = parser.parse_args(args)
     return args
@@ -95,7 +100,7 @@ def args_to_params(args):
         os.makedirs(results_path)
 
     params = {
-        'lists': None, 'paths': None, 'color': None, 'texture': None, 'text': None, 'remove': None
+        'lists': None, 'paths': None, 'features': None, 'color': None, 'texture': None, 'text': None, 'remove': None
     }
     params['paths'] = {
         'bbdd': args.bbdd_path,
@@ -126,7 +131,14 @@ def args_to_params(args):
             'text': args.remove_text,
             'noise': args.remove_noise
         }
-    if not True in (args.use_color, args.use_texture, args.use_text):
+    if True in (args.use_sift, args.use_orb, args.use_surf):
+        params['features'] = {
+            'sift': args.use_sift,
+            'orb': args.use_orb,
+            'surf': args.use_surf
+        }
+    if not True in (args.use_color, args.use_texture, args.use_text,
+                    args.use_sift, args.use_orb, args.use_surf):
         sys.error('No descriptor method specified')
 
     return params
@@ -149,10 +161,6 @@ def run():
     query_list = utils.path_to_list(params['paths']['query'], extension='jpg')
 
     params = lists_to_params(params, bbdd_list, query_list)
-
-
-    if args.sift:
-        match_dict = sift.process_query(query_list, bbdd_list)
 
     paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 

@@ -12,6 +12,8 @@ import week4.histograms as histograms
 import week4.text_boxes as text_boxes_detection
 import week4.noise_removal as noise
 import week4.utils as utils
+import week4.feature_descriptors as feature_descriptors
+import week4.sift as sift
 
 def image_to_paintings(image_path, params):
     img = cv.imread(image_path)
@@ -83,6 +85,54 @@ def get_k_images(params, k):
                                                            weight=params['texture']['weight'])
 
             all_distances.append(texture_distances)
+
+        if params['features'] is not None:
+
+            if params['features']['orb']:
+
+                print('---Computing ORB bbdd_histograms---')
+                bbdd_descriptors = list(tqdm(p.imap(feature_descriptors.compute_bbdd_orb_descriptors,
+                                                    [path for path in params['lists']['bbdd']]),
+                                             total=len(params['lists']['bbdd'])))
+
+                predicted_paintings_all = []
+                print('---Computing ORB query_histograms and distances---')
+                for image_id, paintings_image in tqdm(enumerate(paintings), total=len(paintings)):
+                    predicted_paintings_image = []
+                    for painting_id, painting in enumerate(paintings_image):
+                        painting_kp, painting_des = feature_descriptors.orb_descriptor(painting)
+                        matching = []
+                        if len(painting_kp) > 0:
+
+                            predicted_paintings = []
+
+                            match_descriptors_partial = partial(feature_descriptors.match_descriptors, query_des=painting_des)
+                            matches = p.imap(match_descriptors_partial, [kp_des for kp_des in bbdd_descriptors])
+
+                            # matches_filtered = feature_descriptors.get_matches_filtered(matches)
+
+                            matches_distances = [feature_descriptors.calculate_distance(m) for m in matches]
+                            predicted_paintings = sorted(range(len(matches_distances)), key=matches_distances.__getitem__)
+
+                            # matches.argsort(key=lambda x: _calculate_distance(x))
+                            # predicted_paintings = [m for m in matches]
+
+                            if len(predicted_paintings) == 0:
+                                predicted_paintings_image.append([-1])
+                            else:
+                                predicted_paintings_image.append(predicted_paintings[:k])
+                    predicted_paintings_all.append(predicted_paintings_image)
+
+                return predicted_paintings_all
+
+            if params['features']['sift']:
+                print('NOT IMPLEMENTED')
+                # paintings_predicted_list = sift()
+                # match_dict = sift.process_query(query_list, bbdd_list)
+
+            if params['features']['surf']:
+                print('NOT IMPLEMENTED')
+                # paintings_predicted_list = feature_descriptors.surf()
 
         # if params['text'] is not None:
         #     print('...Computing text histograms and distances...')
