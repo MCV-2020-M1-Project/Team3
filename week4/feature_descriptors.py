@@ -3,7 +3,8 @@ import numpy as np
 
 def surf_descriptor(image, threshold=400):
     #Find the SURF keypoints and descriptors of a given image
-    img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    im = cv.imread(image)
+    img_gray = cv.cvtColor(im, cv.COLOR_BGR2GRAY)
     surf = cv.xfeatures2d.SURF_create(threshold, )
     kp, des = surf.detectAndCompute(img_gray, None)
 
