@@ -114,6 +114,8 @@ def compute_distances(paintings, text_boxes, bbdd_texts, metric, weight):
                 text_box = text_boxes_image[painting_id]
             else:
                 text_box = [0,0,0,0]
+            if text_box is None:
+                text_box = [0,0,0,0]
 
             text = get_text(painting, text_box)
             distances = []
