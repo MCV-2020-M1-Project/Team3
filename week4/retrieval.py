@@ -25,6 +25,8 @@ def image_to_paintings(image_path, params):
     text_boxes=[None]
     text_boxes_shift=[None]
 
+    paintings_coords = [[0,0,0,0]]
+
     if params['remove'] is not None:
         if params['remove']['bg']:
             [paintings, paintings_coords] = masks.remove_bg(img, params, image_id)
@@ -34,12 +36,13 @@ def image_to_paintings(image_path, params):
 
         if params['remove']['text']:
             [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
-            # for idx,painting in enumerate(paintings):
-            #     text_detected=text_detection.get_text(painting,text_boxes[idx])
-            #
-            #     predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
-            #     with open(predicted_text_path,"a+") as f:
-            #         f.write(text_detected+"\n")
+            for idx,painting in enumerate(paintings):
+                if text_boxes[idx] is not None:
+                    text_detected=text_detection.get_text(painting,text_boxes[idx])
+
+                    predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
+                    with open(predicted_text_path,"a+") as f:
+                        f.write(text_detected+"\n")
 
     return [paintings, text_boxes, text_boxes_shift]
 
@@ -82,21 +85,22 @@ def get_k_images(params, k):
             all_distances.append(color_distances)
 
         if params['texture'] is not None:
-            compute_bbdd_histograms_partial = partial(histograms.compute_bbdd_histograms,
-                                                      descriptor=params['texture']['descriptor'])
+            for texture_id, texture_descriptor in enumerate(params['texture']['descriptor']):
+                compute_bbdd_histograms_partial = partial(histograms.compute_bbdd_histograms,
+                                                          descriptor=texture_descriptor)
 
-            print('...Computing texture bbdd_histograms...')
-            bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
-                                              [path for path in params['lists']['bbdd']]),
-                                              total=len(params['lists']['bbdd'])))
+                print('...Computing texture bbdd_histograms...')
+                bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
+                                                  [path for path in params['lists']['bbdd']]),
+                                                  total=len(params['lists']['bbdd'])))
 
-            print('---Computing texture query_histograms and distances---')
-            texture_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
-                                                           descriptor=params['texture']['descriptor'],
-                                                           metric=params['texture']['metric'],
-                                                           weight=params['texture']['weight'])
+                print('---Computing texture query_histograms and distances---')
+                texture_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
+                                                               descriptor=texture_descriptor,
+                                                               metric=params['texture']['metric'][texture_id],
+                                                               weight=params['texture']['weight'][texture_id])
 
-            all_distances.append(texture_distances)
+                all_distances.append(texture_distances)
 
         if params['features'] is not None:
 
@@ -146,32 +150,11 @@ def get_k_images(params, k):
                 print('NOT IMPLEMENTED')
                 # paintings_predicted_list = feature_descriptors.surf()
 
-        # if params['text'] is not None:
-        #     print('...Computing text histograms and distances...')
-        #
-        #     compute_bbdd_histograms_partial = partial(histograms.compute_bbdd_histograms,
-        #                                               descriptor=params['text'].text_descriptor,
-        #                                               params=params)
-        #
-        #     bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
-        #                                       [path for path in params['lists'].bbdd]),
-        #                                       total=len(params['lists'].bbdd)))
-        #
-        #     text_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
-        #                                                    descriptor=params['text'].text_descriptor,
-        #                                                    metric=params['text'].metric,
-        #                                                    weight=params.['text'].weight)
-        #
-        #
-        #     all_distances.append(text_distances)
-
         if params['text'] is not None:
             print('...Computing text histograms and distances...')
-
             bbdd_texts = text_detection.get_bbdd_texts(params['paths']['bbdd'])
 
             text_distances = text_detection.compute_distances(paintings, text_boxes, bbdd_texts,
-                                                            descriptor=params['text'],
                                                             metric=params['text']['metric'],
                                                             weight=params['text']['weight'])
 

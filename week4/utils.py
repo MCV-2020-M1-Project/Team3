@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+import numpy as np
 from glob import glob
 
 def path_to_list(data_path, extension='jpg'):
@@ -140,7 +141,7 @@ def inverse_zigzag(input, vmax, hmax):
 
 def sort_paintings(paintings_coords_aux):
     paintings_coords = []
-    
+
     if len(paintings_coords_aux) == 1:
         paintings_coords.append(paintings_coords_aux[0])
 

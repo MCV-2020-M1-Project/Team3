@@ -32,7 +32,7 @@ def get_matches_filtered(matches, th=450):
 
 def orb_descriptor(img,bounding_rm=True):
     img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    orb = cv.ORB_create()
+    orb = cv.ORB_create(2000)
     if bounding_rm:
         bounding = text_boxes.detect_text_box(img)
         bounding_mask = np.zeros(img_gray.shape,np.uint8)
