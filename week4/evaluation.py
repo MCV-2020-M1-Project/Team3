@@ -123,6 +123,8 @@ def evaluate_text_boxes(gt_boxes_path, pred_boxes_path):
 
     # Compute iou for each gt/predicted bounding box
     for box_idx, gt_box in enumerate(groundtruth_text_boxes_eval):
+        if box_idx >= len(predicted_text_boxes_eval):
+            break
         pred_box = predicted_text_boxes_eval[box_idx]
         print('----------------')
         print(f'ID: {box_idx} --> {gt_box}, {pred_box}')
@@ -207,6 +209,8 @@ def evaluate(params, k_list, verbose=False):
 
         else:
             for image_id, groundtruth_paintings_per_image in enumerate(paintings_groundtruth_list):
+                if image_id >= len(paintings_predicted_list):
+                    break
                 predicted_paintings_per_image = paintings_predicted_list[image_id]
                 for painting_id, groundtruth_painting in enumerate(groundtruth_paintings_per_image):
                     groundtruth_paintings_list_eval.append([groundtruth_painting])

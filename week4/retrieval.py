@@ -202,7 +202,7 @@ def get_matches(bbdd_surf, query_surf):
             for bbdd in bbdd_surf:
                 kp, des = bbdd
                 if len(kp) > 0:
-                    matches = fd.match_descriptors(q_des, des)
+                    matches = feature_descriptors.match_descriptors(q_des, des)
                     if len(matches) > 2:
                         query_matches_paintings.append([bbdd_surf.index(bbdd), matches])
         query_matches_image.append(query_matches_paintings)
@@ -240,13 +240,13 @@ def get_top_matches(params, k=5, threshold=400):
                                                  total=len(params['lists']['query']))))
         matched = []
 
-        compute_bbdd_surf_partial = partial(fd.surf_descriptor,
+        compute_bbdd_surf_partial = partial(feature_descriptors.surf_descriptor,
                                             threshold=threshold)
         print('---Computing bbdd_surf---')
         bbdd_surf = list(tqdm(p.imap(compute_bbdd_surf_partial,
                                      [path for path in params['lists']['bbdd']])))
 
-        compute_query_surf_partial = partial(fd.surf_descriptor_painting,
+        compute_query_surf_partial = partial(feature_descriptors.surf_descriptor_painting,
                                             threshold=threshold)
         print('---Computing query_surf---')
         query_surf = list(tqdm(p.imap(compute_query_surf_partial,
@@ -279,18 +279,21 @@ def get_top_matches_sift(params, k=5, threshold=400):
         image_to_paintings_partial = partial(image_to_paintings, params=params)
 
         print('---Extracting paintings from images (optional: removing background or text)---')
-        [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+        x = zip(*list(tqdm(p.imap(image_to_paintings_partial,
                                                         [path for path in params['lists']['query']]),
                                                  total=len(params['lists']['query']))))
+
+        [paintings, text_boxes, x] = x
+        print(x)
         all_distances = []
 
-        compute_bbdd_sift_partial = partial(fd.sift_descriptor,
+        compute_bbdd_sift_partial = partial(feature_descriptors.sift_descriptor,
                                             threshold=threshold)
         print('---Computing bbdd_sift---')
         bbdd_sift = list(tqdm(p.imap(compute_bbdd_sift_partial,
                                      [path for path in params['lists']['bbdd']])))
 
-        compute_query_sift_partial = partial(fd.sift_descriptor,
+        compute_query_sift_partial = partial(feature_descriptors.sift_descriptor,
                                             threshold=threshold)
         print('---Computing query_sift---')
         query_sift = list(tqdm(p.imap(compute_query_sift_partial,
@@ -329,7 +332,7 @@ def get_matches_sift(bbdd_sift, query_sift, k=5):
         for bbdd in bbdd_sift:
             kp, des = bbdd
             if len(kp) > 0:
-                matches = fd.match_descriptors_sift(q_des, des)
+                matches = feature_descriptors.match_descriptors_sift(q_des, des)
 
                 good_matches = []
                 for m,n in matches:

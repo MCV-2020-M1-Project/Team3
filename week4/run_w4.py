@@ -166,27 +166,25 @@ def run():
     # if args.use_text:
     #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
-    if args.sift:
-        # query_path = "data/qsd1_w4_copy/00001_small_2.jpg"
-        # db_image = "data/qsd1_w4_copy/00001.jpg"
-
-        # sift.sift_corner_detection(query_path, db_image)
-        k= k[0]
-
-        qm = retrieval.get_top_matches_sift(params, k, threshold=5000)
-        evaluation.evaluate(qm, params, k, verbose=args.verbose)
-
 
     # paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
-
-    # utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
     # if not args.test:
     #     evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
 
-    if args.surf:
+    if args.use_surf:
         qm = retrieval.get_top_matches(params, max(k), threshold=5000)
         evaluation.evaluate(qm, params, k, verbose=args.verbose)
 
-    if not args.test:
+    if args.use_sift:
+            # query_path = "data/qsd1_w4_copy/00001_small_2.jpg"
+        # db_image = "data/qsd1_w4_copy/00001.jpg"
+
+        # sift.sift_corner_detection(query_path, db_image)
+
+        qm = retrieval.get_top_matches_sift(params, max(k), threshold=5000)
+        utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), qm)
         evaluation.evaluate(params, k, verbose=args.verbose)
+
+    # if not args.test:
+    #     evaluation.evaluate(params, k, verbose=args.verbose)
