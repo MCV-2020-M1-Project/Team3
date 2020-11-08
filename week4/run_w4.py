@@ -150,30 +150,13 @@ def run():
 
     params = lists_to_params(params, bbdd_list, query_list)
 
-    # if args.use_text:
-    #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
     if args.sift:
         match_dict = sift.process_query(query_list, bbdd_list)
-
 
     paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
     utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
     if not args.test:
-        evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
-
-
-
-# from week4 import sift
-# def get_corners():
-#     query_path = 'data/qsd1_w4'
-#
-#     image_path = query_path + '/00000.jpg'
-#
-#     sift.sift_corner_detection(image_path)
-#
-#
-# def run():
-#     get_corners()
+        evaluation.evaluate(params, k, verbose=args.verbose)
