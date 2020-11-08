@@ -3,7 +3,13 @@ import operator
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
+
+import imutils
+
+import pywt
+from skimage import feature
 from scipy.fftpack import dct, idct
+from skimage.feature import hog
 
 import multiprocessing.dummy as mp
 from functools import partial
@@ -44,10 +50,10 @@ def rgb_3d_histogram(img):
     hist = cv.calcHist([img], hist_channels, None, hist_bins,
                        hist_range)
 
-    hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
-                        norm_type=cv.NORM_MINMAX).flatten()  # change histogram range from [0,256] to [0,1]
+    cv.normalize(hist, hist, alpha=0, beta=1,
+                 norm_type=cv.NORM_MINMAX)  # change histogram range from [0,256] to [0,1]
 
-    return hist_norm
+    return hist
 
 def lbp_histogram(img):
 
@@ -55,16 +61,14 @@ def lbp_histogram(img):
     radius=2
     gray = cv.cvtColor(img, OPENCV_COLOR_SPACES["GRAY"])
 
-    lbp = feature.local_binary_pattern(gray, num_points, radius, method="uniform")
+    lbp = feature.local_binary_pattern(gray, num_points, radius, method="default")
 
-    hist = cv.calcHist([lbp.astype(np.uint8)], [0], None, [numPoints + 2],
-                       [0, numPoints + 2])
+    hist = cv.calcHist([lbp.astype(np.uint8)], [0], None, [4],[0, 255])
 
-    hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
-                        norm_type=cv.NORM_MINMAX)
-    return hist_norm
+    cv.normalize(hist, hist)
 
-# Number of blocks: 16, distance: Intersection, norm: 'ortho', n_coefs: 5 --> 0.89 (qsd1_w1)
+    return hist
+
 def dct_histogram(img):
 
     def dct2(img, norm):
@@ -74,44 +78,33 @@ def dct_histogram(img):
         return idct(idct(img, axis=0, norm=norm), axis=1, norm=norm)
 
     norm='ortho'
-    n_coefs=5
+    n_coefs = 10
 
     gray = cv.cvtColor(img, OPENCV_COLOR_SPACES["GRAY"])
 
-    dct_img = dct2(gray, norm)
+    dct_img = dct2(np.float32(gray)/255.0, norm)
 
     dct_zigzag = np.asarray(utils.zigzag(dct_img, n_coefs))
 
-    hist = cv.calcHist([dct_zigzag.astype(np.uint16)], [0], None, [8], [0, max(dct_zigzag)])
+    return dct_zigzag
 
-    # hist = hist.astype("float32")
+def hog_histogram(img, text_box):
 
-    hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
-                             norm_type=cv.NORM_MINMAX)
-
-    return hist_norm
-
-def hog_histogram(img):
-
-    orientations = 8
+    orientations = 9
     pixels_per_cell = (16,16)
-    cells_per_block = (1,1)
+    cells_per_block = (3,3)
 
-    gray = cv.cvtColor(img, OPENCV_COLOR_SPACES["GRAY"])
+    resized_img = cv.resize(img, (256, 256), interpolation=cv.INTER_AREA)
+
+    gray = cv.cvtColor(resized_img, OPENCV_COLOR_SPACES["GRAY"])
 
     hog_coefs = hog(gray, orientations=orientations, pixels_per_cell=pixels_per_cell,
-                    cells_per_block=cells_per_block, visualize=False, feature_vector=True)
-    hog_coefs *= 256
+                    cells_per_block=cells_per_block, visualize=False, feature_vector=True,
+                    multichannel=False).astype(np.float32)
 
-    hist = cv.calcHist([hog_coefs.astype(np.uint8)], [0], None, [8], [0, 256])
+    return hog_coefs
 
-    # hist = hist.astype("float32")
-
-    hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
-                             norm_type=cv.NORM_MINMAX)
-
-    return hist_norm
-
+# wrong implementation --> need to fix it
 def wavelet_histogram(img):
 
     wavelet='db1'
@@ -138,15 +131,14 @@ def wavelet_histogram(img):
     hist_concat = None
     for coef in wavelet_coefs:
         max_range = abs(np.amax(coef))+1
-        hist = cv.calcHist([coef.astype(np.uint8)], [0], None, [8], [0, max_range])
+        hist = cv.calcHist([coef.astype(np.uint8)], [0], None, [16], [0, max_range])
 
-        hist_norm = cv.normalize(hist, hist, alpha=0, beta=1,
-                                 norm_type=cv.NORM_MINMAX)
+        cv.normalize(hist, hist)
 
         if hist_concat is None:
-            hist_concat = hist_norm
+            hist_concat = hist
         else:
-            hist_concat = cv.hconcat([hist_concat, hist_norm])
+            hist_concat = cv.hconcat([hist_concat, hist])
 
     return hist_concat
 
@@ -246,29 +238,32 @@ def compute_distances(paintings, text_boxes, bbdd_histograms, descriptor, metric
     histograms = []
     all_distances = []
 
-    print('---Computing color query_histograms and distances---')
     for image_id, paintings_image in tqdm(enumerate(paintings), total=len(paintings)):
 
         text_boxes_image = text_boxes[image_id]
         distances_image = []
         for painting_id, painting in enumerate(paintings_image):
-            if len(text_boxes_image) > painting_id:
-                text_box = text_boxes_image[painting_id]
-            else:
-                text_box = None
+            text_box = text_boxes_image[painting_id]
+            # [tlx,tly,brx,bry] = text_box
+            # cv.rectangle(painting, (tlx, tly), (brx, bry), (0,255,0), 10)
+            # cv.imshow('p', imutils.resize(painting,height=600))
+            # cv.waitKey()
+
             hist = HISTOGRAM[descriptor](painting, text_box=text_box)
 
             distances_painting = []
             for bbdd_hist in bbdd_histograms:
+
                 dist = cv.compareHist(hist, bbdd_hist, OPENCV_DISTANCE_METRICS[metric])
+
                 if reverse:
-                    dist = 1/dist
+                    dist = 1/(dist+1e-7)
                 distances_painting.append(dist)
 
-            min_distance = min(distances_painting)
-            max_distance = max(distances_painting)
-            distances_painting_norm = [(d-min_distance) / (max_distance-min_distance)
-                                        for d in distances_painting]
+            # min_distance = min(distances_painting)
+            # max_distance = max(distances_painting)
+            # distances_painting_norm = [(d-min_distance) / (max_distance-min_distance)
+            #                             for d in distances_painting]
 
             # if reverse:
             #     distances_painting_norm = [1-d for d in distances_painting_norm]
@@ -277,6 +272,5 @@ def compute_distances(paintings, text_boxes, bbdd_histograms, descriptor, metric
             distances_image.append(distances_painting_weight)
 
         all_distances.append(distances_image)
-    print('-> Done!')
 
     return all_distances

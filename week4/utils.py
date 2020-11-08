@@ -143,7 +143,7 @@ def inverse_zigzag(input, vmax, hmax):
 
 def sort_paintings(paintings_coords_aux):
     paintings_coords = []
-
+    
     if len(paintings_coords_aux) == 1:
         paintings_coords.append(paintings_coords_aux[0])
 

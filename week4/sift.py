@@ -34,9 +34,6 @@ def sift_corner_detection(image_path, db_image_path, threshold=400):
     # cv.imwrite('sift_keypoints.jpg',img)
 
     bf = cv.BFMatcher()
-    print("Match", image_path, db_image_path)
-    print("des1:", des)
-    print("des2:", des2)
     matches = bf.knnMatch(des,des2, k=2)
 
 

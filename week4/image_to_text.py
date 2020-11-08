@@ -1,10 +1,13 @@
 import pytesseract as tess
-tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'#your path to tesseract for windows users
+# tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'#your path to tesseract for windows users
+tess.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'#your path to tesseract for windows users
+# tess.pytesseract.tesseract_cmd = r'/home/oscar/.local/bin/pytesseract'
 from PIL import Image
 import operator
 import cv2 as cv
 import jellyfish as jel
 import os
+import imutils
 
 from string import ascii_letters, digits
 
@@ -24,19 +27,35 @@ def get_bbdd_texts(bbdd_path):
 
     return bbdd_texts
 
+def dilate_text_box(text_box,percentage):
+    tl_x=int(text_box[0]*(1-percentage/100))
+    tl_y=int(text_box[1]*(1-percentage/100))
+    br_x=int(text_box[2]*(1+percentage/100))
+    br_y=int(text_box[3]*(1+percentage/100))
+
+    return[tl_x,tl_y,br_x,br_y]
+
 
 def get_text(img, text_box):
-
-    tl_x=text_box[0]
-    tl_y=text_box[1]
-    br_x=text_box[2]
-    br_y=text_box[3]
-
     if text_box!=[0, 0, 0, 0]:
+        percentage=2
+        expanded_box=dilate_text_box(text_box,percentage)
+
+        tl_x=expanded_box[0]
+        tl_y=expanded_box[1]
+        br_x=expanded_box[2]
+        br_y=expanded_box[3]
+
         roi=img[tl_y:br_y,tl_x:br_x]
-        gray=cv.cvtColor(roi,cv.COLOR_BGR2GRAY)
+        resized=imutils.resize(roi,height=500)
+        gray=cv.cvtColor(resized,cv.COLOR_BGR2GRAY)
         thld,bw=cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
         text = tess.image_to_string(bw)
+
+        # cv.imshow("roi",roi)
+        # cv.imshow("resized",resized)
+        # cv.imshow("bw",bw)
+        # cv.waitKey()
     else:
         text="box not found"
 
@@ -81,3 +100,19 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
 
     return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
+
+def compute_distances(painting, text_box, bbdd_texts, distance_metric="Hamming"):
+
+    text = get_text(painting, text_box)
+    distances = {}
+
+    for bbdd_id, bbdd_text in bbdd_texts.items():
+
+        if bbdd_text!='empty':
+            bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
+            distances[bbdd_id] = get_text_distance(text.lower(), bbdd_text.split(",",1)[0].strip(),distance_metric)
+
+        else:
+            distances[bbdd_id]=100
+
+    return distances
