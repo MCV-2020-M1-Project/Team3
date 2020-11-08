@@ -1,5 +1,7 @@
 import pytesseract as tess
-tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'#your path to tesseract for windows users
+# tess.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'#your path to tesseract for windows users
+tess.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'#your path to tesseract for windows users
+# tess.pytesseract.tesseract_cmd = r'/home/oscar/.local/bin/pytesseract'
 from PIL import Image
 import operator
 import cv2 as cv
@@ -25,21 +27,19 @@ def get_bbdd_texts(bbdd_path):
 
     return bbdd_texts
 
-
-
 def dilate_text_box(text_box,percentage):
     tl_x=int(text_box[0]*(1-percentage/100))
     tl_y=int(text_box[1]*(1-percentage/100))
     br_x=int(text_box[2]*(1+percentage/100))
     br_y=int(text_box[3]*(1+percentage/100))
-    
+
     return[tl_x,tl_y,br_x,br_y]
-    
-    
+
+
 def get_text(img, text_box):
     if text_box!=[0, 0, 0, 0]:
         percentage=2
-        expanded_box=dilate_text_box(text_box,percentage) 
+        expanded_box=dilate_text_box(text_box,percentage)
 
         tl_x=expanded_box[0]
         tl_y=expanded_box[1]
@@ -47,11 +47,11 @@ def get_text(img, text_box):
         br_y=expanded_box[3]
 
         roi=img[tl_y:br_y,tl_x:br_x]
-        resized=imutils.resize(roi,height=500)        
+        resized=imutils.resize(roi,height=500)
         gray=cv.cvtColor(resized,cv.COLOR_BGR2GRAY)
         thld,bw=cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
         text = tess.image_to_string(bw)
-        
+
         # cv.imshow("roi",roi)
         # cv.imshow("resized",resized)
         # cv.imshow("bw",bw)

@@ -22,8 +22,9 @@ def image_to_paintings(image_path, params):
     image_id = utils.get_image_id(image_path)
 
     paintings=[img]
-
     text_boxes=[None]
+    text_boxes_shift=[None]
+
     if params['remove'] is not None:
         if params['remove']['bg']:
             [paintings, paintings_coords] = masks.remove_bg(img, params, image_id)
@@ -32,15 +33,13 @@ def image_to_paintings(image_path, params):
             paintings = noise.denoise_paintings(paintings, params, image_id)
 
         if params['remove']['text']:
-
-            [paintings, text_boxes] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
-            for idx,painting in paintings:
-                text_detected=text_detection(painting,text_boxes[idx])
-                predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
-                f = open(predicted_text_path,"a+")
-                f.write(text_detected+"\n")
-                f.close()
-   [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+            [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+            # for idx,painting in enumerate(paintings):
+            #     text_detected=text_detection.get_text(painting,text_boxes[idx])
+            #
+            #     predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
+            #     with open(predicted_text_path,"a+") as f:
+            #         f.write(text_detected+"\n")
 
     return [paintings, text_boxes, text_boxes_shift]
 
@@ -168,15 +167,15 @@ def get_k_images(params, k):
 
         if params['text'] is not None:
             print('...Computing text histograms and distances...')
-       
+
             bbdd_texts = text_detection.get_bbdd_texts(params['paths']['bbdd'])
-                    
+
             text_distances = text_detection.compute_distances(paintings, text_boxes, bbdd_texts,
                                                             descriptor=params['text'],
                                                             metric=params['text']['metric'],
                                                             weight=params['text']['weight'])
-            
-        
+
+
             all_distances.append(text_distances)
 
         for q in range(len(paintings)):
