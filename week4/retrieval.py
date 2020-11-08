@@ -10,7 +10,7 @@ from itertools import repeat
 
 import week4.masks as masks
 import week4.histograms as histograms
-import week4.text_boxes as text_boxes
+import week4.text_boxes as tb
 import week4.noise_removal as noise
 import week4.utils as utils
 import week4.feature_descriptors as fd
@@ -31,7 +31,7 @@ def image_to_paintings(image_path, params):
             paintings = noise.denoise_paintings(paintings, params, image_id)
 
         if params['remove']['text']:
-            [paintings, text_boxes] = text_boxes.remove_text(paintings, paintings_coords)
+            [paintings, text_boxes] = tb.remove_text(paintings, paintings_coords)
 
     return [paintings, text_boxes]
 
@@ -192,3 +192,89 @@ def get_top_matches(params, k=5, threshold=400):
 
     return paintings_predicted_list
 
+
+def get_top_matches_sift(params, k=5, threshold=400):
+    
+    all_matches = []
+    processes = 4
+    paintings_predicted_list = []
+    with mp.Pool(processes=processes) as p:
+        image_to_paintings_partial = partial(image_to_paintings, params=params)
+
+        print('---Extracting paintings from images (optional: removing background or text)---')
+        [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+                                                        [path for path in params['lists']['query']]),
+                                                 total=len(params['lists']['query']))))
+        all_distances = []
+
+        compute_bbdd_sift_partial = partial(fd.sift_descriptor,
+                                            threshold=threshold)
+        print('---Computing bbdd_sift---')
+        bbdd_sift = list(tqdm(p.imap(compute_bbdd_sift_partial,
+                                     [path for path in params['lists']['bbdd']])))
+
+        compute_query_sift_partial = partial(fd.sift_descriptor,
+                                            threshold=threshold)
+        print('---Computing query_sift---')
+        query_sift = list(tqdm(p.imap(compute_query_sift_partial,
+                                      [path for path in params['lists']['query']])))
+
+        compute_matches_partial = partial(get_matches_sift,
+                                         bbdd_sift, k=k)
+        print('---Computing matches---')
+        all_distances.append(list(tqdm(p.imap(compute_matches_partial,
+                         [query for query in query_sift]))))
+
+        for q in range(len(paintings)):
+            qlist = []
+            for sq in range(len(paintings[q])):
+                dist = np.array(all_distances[0][q][sq])[1]
+
+                for idx, f in range(1, len(all_distances)):
+                    dist += all_distances[f][q][sq]
+
+                dist = np.array([x.distance for x in dist])
+
+                nearest_indices = np.argsort(dist)[:k]
+                result_list = [index for index in nearest_indices]
+                qlist.append(result_list)
+            paintings_predicted_list.append(qlist)
+
+    print(paintings_predicted_list)
+    return paintings_predicted_list
+
+def get_matches_sift(bbdd_sift, query_sift, k=5):
+    
+    query_matches = []
+
+    q_kp, q_des = query_sift
+    if len(q_kp) > 0:
+        for bbdd in bbdd_sift:
+            kp, des = bbdd
+            if len(kp) > 0:
+                matches = fd.match_descriptors_sift(q_des, des)
+
+                good_matches = []
+                for m,n in matches:
+                    if m.distance < 0.75*n.distance:
+                        good_matches.append(m)
+
+                if len(good_matches) > 2:
+                    query_matches.append([bbdd_sift.index(bbdd), good_matches])
+
+    def calculate_distance(q_match):
+        dist = 0
+        for m in q_match:
+            dist += m.distance
+        return dist / len(q_match)
+
+    result = []
+    for item in query_matches:
+        idx, match = item
+        item.sort(key=lambda x: calculate_distance(match))
+        if len(item) == 0:
+            result.append([-1])
+        else:
+            result.append(item)
+
+    return result

@@ -4,17 +4,19 @@ import cv2 as cv
 import numpy as np
 import pickle
 import ntpath
+import matplotlib.pyplot as plt
+
 
 from collections import defaultdict
 
 # import metrics
 
-def sift_corner_detection(image_path, db_image_path):
+def sift_corner_detection(image_path, db_image_path, threshold=400):
 
     img = cv.imread(image_path)
     img2 = cv.imread(db_image_path)
     gray= cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    sift = cv.SIFT_create()
+    sift = cv.SIFT_create(threshold,)
     kp, des = sift.detectAndCompute(gray,None)
 
     if des is None:
@@ -43,6 +45,11 @@ def sift_corner_detection(image_path, db_image_path):
     for m,n in matches:
         if m.distance < 0.75*n.distance:
             good.append([m])
+
+    img = cv.imread(image_path)
+    img2 = cv.imread(db_image_path)
+    img3 = cv.drawMatchesKnn(img,kp,img2,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    cv.imwrite('sift_keypoints_match.jpg',img3)
 
     if len(good)>5:
         return True

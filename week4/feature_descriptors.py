@@ -26,4 +26,19 @@ def match_descriptors(d1, d2, type='BRUTE'):
     return matches
 
 
+def sift_descriptor(image, threshold=400):
+    
+    img = cv.imread(image)
+    gray= cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+    sift = cv.SIFT_create(threshold)
+    kp, des = sift.detectAndCompute(gray,None)
 
+    return (kp, des)
+    
+
+def match_descriptors_sift(d1, d2):
+
+    bf = cv.BFMatcher()
+    matches = bf.knnMatch(d1,d2, k=2)
+
+    return matches

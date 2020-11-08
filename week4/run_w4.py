@@ -129,8 +129,8 @@ def args_to_params(args):
             'text': args.remove_text,
             'noise': args.remove_noise
         }
-    if not True in (args.use_color, args.use_texture, args.use_text):
-        sys.error('No descriptor method specified')
+    # if not True in (args.use_color, args.use_texture, args.use_text):
+    #     sys.error('No descriptor method specified')
 
     return params
 
@@ -157,15 +157,23 @@ def run():
     #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
     if args.sift:
-        match_dict = sift.process_query(query_list, bbdd_list)
+        # query_path = "data/qsd1_w4_copy/00001_small_2.jpg"
+        # db_image = "data/qsd1_w4_copy/00001.jpg"
+
+        # sift.sift_corner_detection(query_path, db_image)
+        k= k[0]
 
 
-    paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
+        qm = retrieval.get_top_matches_sift(params, k, threshold=5000)
+        evaluation.evaluate(qm, params, k, verbose=args.verbose)
 
-    utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
-    if not args.test:
-        evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
+    # paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
+
+    # utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
+
+    # if not args.test:
+    #     evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
 
     if args.surf:
         qm = retrieval.get_top_matches(params, k, threshold=5000)
