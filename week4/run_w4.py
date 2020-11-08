@@ -158,6 +158,5 @@ def run():
 
     utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
-
     if not args.test:
         evaluation.evaluate(params, k, verbose=args.verbose)

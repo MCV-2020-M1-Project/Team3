@@ -184,6 +184,7 @@ def evaluate(params, k_list, verbose=False):
             mean_iou = evaluate_text_boxes(os.path.join(params['paths']['query'], 'text_boxes.pkl'), os.path.join(params['paths']['results'], 'text_boxes.pkl'))
             print('**********************')
             print(f'Text bounding boxes evaluation: Mean IOU = {mean_iou}')
+            print('**********************')
 
 
     paintings_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'result.pkl'))

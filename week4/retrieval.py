@@ -1,9 +1,8 @@
+import os
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
 import os
-
-import sys
 
 import multiprocessing.dummy as mp
 from functools import partial
@@ -31,6 +30,7 @@ def image_to_paintings(image_path, params):
             paintings = noise.denoise_paintings(paintings, params, image_id)
 
         if params['remove']['text']:
+
             [paintings, text_boxes] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
             for idx,painting in paintings:
                 text_detected=text_detection(painting,text_boxes[idx])
@@ -38,8 +38,10 @@ def image_to_paintings(image_path, params):
                 f = open(predicted_text_path,"a+")
                 f.write(text_detected+"\n")
                 f.close()
-            
-    return [paintings, text_boxes]
+   [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+
+    return [paintings, text_boxes, text_boxes_shift]
+
 
 def get_k_images(params, k):
 
@@ -52,10 +54,14 @@ def get_k_images(params, k):
         image_to_paintings_partial = partial(image_to_paintings, params=params)
 
         print('---Extracting paintings from images (optional: removing background or text)---')
-        [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+        [paintings, text_boxes, text_boxes_shift] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
                                                   [path for path in params['lists']['query']]),
                                                   total=len(params['lists']['query']))))
-        
+
+
+        utils.save_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'), text_boxes_shift)
+
+
         all_distances = []
 
         if params['color'] is not None:
@@ -91,6 +97,7 @@ def get_k_images(params, k):
 
             all_distances.append(texture_distances)
 
+
         if params['text'] is not None:
             print('...Computing text histograms and distances...')
        
@@ -105,7 +112,6 @@ def get_k_images(params, k):
             all_distances.append(text_distances)
 
 
-        
         for q in range(len(paintings)):
             qlist = []
             for sq in range(len(paintings[q])):

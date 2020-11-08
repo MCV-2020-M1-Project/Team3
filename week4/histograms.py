@@ -244,14 +244,11 @@ def compute_distances(paintings, text_boxes, bbdd_histograms, descriptor, metric
         distances_image = []
         for painting_id, painting in enumerate(paintings_image):
             text_box = text_boxes_image[painting_id]
-            # [tlx,tly,brx,bry] = text_box
-            # cv.rectangle(painting, (tlx, tly), (brx, bry), (0,255,0), 10)
-            # cv.imshow('p', imutils.resize(painting,height=600))
-            # cv.waitKey()
-            # if len(text_boxes_image) > painting_id:
-            #     text_box = text_boxes_image[painting_id]
-            # else:
-            #     text_box = [0,0,0,0]
+            [tlx,tly,brx,bry] = text_box
+            cv.rectangle(painting, (tlx, tly), (brx, bry), (0,255,0), 10)
+            cv.imshow('p', imutils.resize(painting,height=600))
+            cv.waitKey()
+    
             hist = HISTOGRAM[descriptor](painting, text_box=text_box)
 
             distances_painting = []
