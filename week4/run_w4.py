@@ -47,15 +47,15 @@ def parse_args(args=sys.argv[2:]):
                         choices=['rgb_3d_blocks', 'rgb_3d_multiresolution'],
                         help='color descriptor used')
 
-    parser.add_argument('--texture_descriptor', type=str, default='dct_blocks',
-                        choices=['dct_blocks', 'dct_multiresolution', 'lbp_blocks', 'lbp_multiresolution',
-                                 'hog', 'wavelet', 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
+    parser.add_argument('--texture_descriptor', type=lambda s: [item for item in s.split(',')], default='dct_blocks',
+                        # choices=['dct_blocks', 'dct_multiresolution', 'lbp_blocks', 'lbp_multiresolution',
+                        #          'hog', 'wavelet', 'hog_blocks', 'hog_multiresolution', 'wavelet_blocks', 'wavelet_multiresolution'],
                         help='texture descriptor used')
 
     parser.add_argument('--color_weight', type=float, default=0.33,
                         help='weight for the color descriptor')
 
-    parser.add_argument('--texture_weight', type=float, default=0.33,
+    parser.add_argument('--texture_weight', type=lambda s: [float(item) for item in s.split(',')], default=[0.33],
                         help='weight for the texture descriptor')
 
     parser.add_argument('--text_weight', type=float, default=0.0,
@@ -65,8 +65,8 @@ def parse_args(args=sys.argv[2:]):
                         choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
-    parser.add_argument('--texture_metric', type=str, default='correlation',
-                        choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
+    parser.add_argument('--texture_metric', type=lambda s: [item for item in s.split(',')], default=['correlation'],
+                        # choices=['hellinger', 'intersection', 'chi-squared', 'correlation'],
                         help='distance metric to compare images')
 
     parser.add_argument('--text_metric', type=str, default='Levensthein',

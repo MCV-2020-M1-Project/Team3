@@ -16,7 +16,7 @@ def get_bbdd_texts(bbdd_path):
     for image_filename in sorted(os.listdir(bbdd_path)):
         if image_filename.endswith('.txt'):
             image_id = int(image_filename.replace('.txt', '').replace('bbdd_', ''))
-            f = open(os.path.join(bbdd_path, image_filename), "r")
+            f = open(os.path.join(bbdd_path, image_filename), "r", encoding='latin-1')
             line= f.readline()
             if line.strip():
                 bbdd_text = line.lower().replace("(","").replace("'"," ").replace(")","") #ignore case
@@ -101,18 +101,31 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
     return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
 
-def compute_distances(painting, text_box, bbdd_texts, distance_metric="Hamming"):
+def compute_distances(paintings, text_boxes, bbdd_texts, metric, weight):
 
-    text = get_text(painting, text_box)
-    distances = {}
+    distances_all = []
+    for image_id, paintings_per_img in enumerate(paintings):
+        distances_img = []
 
-    for bbdd_id, bbdd_text in bbdd_texts.items():
+        text_boxes_image = text_boxes[image_id]
 
-        if bbdd_text!='empty':
-            bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
-            distances[bbdd_id] = get_text_distance(text.lower(), bbdd_text.split(",",1)[0].strip(),distance_metric)
+        for painting_id, painting in enumerate(paintings_per_img):
+            if len(text_boxes_image) > painting_id:
+                text_box = text_boxes_image[painting_id]
+            else:
+                text_box = [0,0,0,0]
 
-        else:
-            distances[bbdd_id]=100
+            text = get_text(painting, text_box)
+            distances = []
 
-    return distances
+            for bbdd_id, bbdd_text in bbdd_texts.items():
+
+                if bbdd_text!='empty':
+                    bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
+                    distances.append(weight * get_text_distance(text.lower(), bbdd_text.split(",",1)[0].strip(),metric))
+
+                else:
+                    distances.append(10000)
+            distances_img.append(distances)
+        distances_all.append(distances_img)
+    return distances_all
