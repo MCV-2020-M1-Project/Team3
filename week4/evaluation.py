@@ -151,7 +151,7 @@ def output_predicted_paintings(query_list, paintings_predicted_list, paintings_g
 
         print('----------------------')
 
-def evaluate(paintings_predicted_list, params, k_list, verbose=False):
+def  evaluate(paintings_predicted_list, params, k_list, verbose=False):
     if params['remove'] is not None:
         if params['remove']['bg']:
             bg_predicted_list = utils.path_to_list(params['paths']['results'], extension='png')
@@ -193,6 +193,7 @@ def evaluate(paintings_predicted_list, params, k_list, verbose=False):
                     predicted_paintings_list_eval.append(predicted_paintings_per_painting)
 
         else:
+
             for image_id, groundtruth_paintings_per_image in enumerate(paintings_groundtruth_list):
                 predicted_paintings_per_image = paintings_predicted_list[image_id]
                 for painting_id, groundtruth_painting in enumerate(groundtruth_paintings_per_image):

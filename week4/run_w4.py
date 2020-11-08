@@ -83,8 +83,8 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
 
-    parser.add_argument('--sift', action='store_true',
-                        help='use SIFT to predict images')
+    parser.add_argument('--orb', action='store_true',
+                        help='use ORB to predict images')
 
     args = parser.parse_args(args)
     return args
@@ -128,7 +128,11 @@ def args_to_params(args):
         }
     if not True in (args.use_color, args.use_texture, args.use_text):
         sys.error('No descriptor method specified')
-
+    if args.orb:
+        params['orb'] = {
+            'bbdd': args.bbdd_path,
+            'remove_text': args.remove_text
+        }
     return params
 
 def lists_to_params(params, bbdd_list, query_list):
@@ -141,7 +145,6 @@ def lists_to_params(params, bbdd_list, query_list):
 def run():
     args = parse_args()
     params = args_to_params(args)
-    print(params)
 
     k = args.map_k
 
@@ -153,19 +156,20 @@ def run():
     # if args.use_text:
     #     text_list = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
 
-    if args.sift:
-        match_dict = sift.process_query(query_list, bbdd_list)
 
 
-    paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
+    #paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
-    utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
+    #utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
-    if not args.test:
-        evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
+    """if not args.test:
+        evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)"""
 
+    if args.orb:
+        #qm = retrieval.get_top_matches(query_list, bbdd_list, k=max(k), threshold=5000)
+        qm = retrieval.get_matches_orb(params['paths']['bbdd'],params['paths']['query'],params,5)
 
-
+        evaluation.evaluate(qm, params, k, verbose=args.verbose)
 # from week4 import sift
 # def get_corners():
 #     query_path = 'data/qsd1_w4'

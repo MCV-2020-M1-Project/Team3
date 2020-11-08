@@ -1,6 +1,8 @@
 import cv2 as cv
 import numpy as np
 from week4 import text_boxes as tb
+from tqdm import tqdm
+
 
 
 def surf_descriptor(image, threshold=400):
@@ -40,3 +42,27 @@ def match_descriptors(d1, d2, type='BRUTE'):
     matches = matcher.match(d1, d2)
 
     return matches
+
+def compute_bbdd_orb_descriptors(bbdd_list):
+    bbdd_descriptors = []
+    for filename in bbdd_list:
+        im = cv.imread(filename)
+        ds = orb_descriptor(im, False)
+        bbdd_descriptors.append(ds)
+    return bbdd_descriptors
+
+def compute_bbdd_orb_query_descriptors(paintings,bbdd_descriptors):
+    def calculate_distance(matches):
+        dist = 0
+        for m in matches:
+            dist += m.distance
+        return dist/len(matches)
+
+    query_descriptors = []
+    query_matches=[]
+    for image_id, paintings_image in tqdm(enumerate(paintings), total=len(paintings)):
+        for painting_id, painting in enumerate(paintings_image):
+            des = orb_descriptor(painting)
+            query_matches.append(des)
+
+    return query_matches

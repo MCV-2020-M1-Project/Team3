@@ -13,6 +13,7 @@ import week4.histograms as histograms
 import week4.text_boxes as text_boxes
 import week4.noise_removal as noise
 import week4.utils as utils
+import week4.feature_descriptors as fd
 
 def image_to_paintings(image_path, params):
     img = cv.imread(image_path)
@@ -114,3 +115,82 @@ def get_k_images(params, k):
             paintings_predicted_list.append(qlist)
 
     return paintings_predicted_list
+
+
+
+def get_matches_orb(bbdd_path,query_list,params,k):
+    def calculate_distance(matches):
+        dist = 0
+        for m in matches:
+            dist += m.distance
+        return dist / len(matches)
+
+    bbdd_list = utils.path_to_list(bbdd_path, extension='jpg')
+    bbdd_descriptors = fd.compute_bbdd_orb_descriptors(bbdd_list)
+
+    pool_processes = 4
+
+    with mp.Pool(processes=pool_processes) as p:
+        image_to_paintings_partial = partial(image_to_paintings, params=params)
+
+        print('---Extracting paintings from images (optional: removing background or text)---')
+        [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+                                                        [path for path in params['lists']['query']]),
+                                                 total=len(params['lists']['query']))))
+
+    query_matches=[]
+    for painting in paintings:
+        for im in painting:
+            kp, des = fd.orb_descriptor(im)
+            matching = []
+            if len(kp) > 0:
+                query_painting = []
+                for bbddkpdes in bbdd_descriptors:
+                    bd_kp, bd_des = bbddkpdes
+                    if len(bd_kp) > 0:
+                        matches = fd.match_descriptors(des, bd_des)
+                        if len(matches) > 2:
+                            matching.append([bbdd_descriptors.index(bbddkpdes), matches])
+                    matching.sort(key=lambda x: calculate_distance(x[1]))
+                if len(matching) == 0:
+                    query_matches.append(-1)
+                else:
+                    query_matches.append(matching[:k])
+        #query_matches.append(query_painting)
+
+    return query_matches
+    #all_distances = fd.compute_bbdd_orb_query_descriptors(params['orb']['query'], bbdd_descriptors)
+
+
+def get_top_matches(query_list, bbdd_list, k = 5, threshold = 400):
+    def calculate_distance(matches):
+        dist = 0
+        for m in matches:
+            dist += m.distance
+        return dist/len(matches)
+
+
+    bbdd_surf = []
+    for bbdd_filename in bbdd_list:
+        im = cv.imread(bbdd_filename)
+        bbdd_surf.append(fd.orb_descriptor(im,False))
+
+    query_matches = []
+    for query in query_list:
+        im = cv.imread(query)
+        kp, des = fd.orb_descriptor(im)
+        matching = []
+        if len(kp) > 0:
+            for bbddkpdes in bbdd_surf:
+                bd_kp, bd_des = bbddkpdes
+                if len(bd_kp) > 0:
+                    matches = fd.match_descriptors(des, bd_des)
+                    if len(matches) > 2:
+                        matching.append([bbdd_surf.index(bbddkpdes), matches])
+                matching.sort(key=lambda x: calculate_distance(x[1]))
+            if len(matching) == 0:
+                query_matches.append(-1)
+            else:
+                query_matches.append(matching[:k])
+    return query_matches
+

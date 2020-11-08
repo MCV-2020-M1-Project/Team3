@@ -39,7 +39,7 @@ def detect_text_box(image):
                 if area > area_max:
                     area_max = area
                     xm, ym, wm, hm = x, y, w, h
-    cv.rectangle(image, (xm, ym), (xm + wm, ym + hm), (36, 255, 12), 3)
+    #cv.rectangle(image, (xm, ym), (xm + wm, ym + hm), (36, 255, 12), 3)
 
     return [xm,ym,xm + wm,hm + ym]
 
