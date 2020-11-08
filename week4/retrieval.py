@@ -117,4 +117,4 @@ def get_k_images(params, k):
                 qlist.append(result_list)
             paintings_predicted_list.append(qlist)
 
-    return paintings_predicted_list, text_boxes
+    return paintings_predicted_list

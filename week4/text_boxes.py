@@ -3,6 +3,8 @@ import numpy as np
 import imutils
 import os
 
+import week4.utils as utils
+
 def compute_score(rect, img):
     img_height = img.shape[0]
     img_width = img.shape[1]
@@ -165,11 +167,6 @@ def remove_text(paintings, paintings_coords, params, image_id):
             text_box = None
         text_boxes.append(text_box)
 
-    # print('------------------------------------')
-    # print(f'Image ID: {image_id}')
-    # print(f'    Paintings coords: {paintings_coords}')
-    # print(f'    Text boxes (before): {text_boxes_pre}')
-    # print(f'    Text boxes (after): {text_boxes}')
-    # print('------------------------------------')
+    utils.save_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'), text_boxes)
 
-    return [paintings, text_boxes]
+    return [paintings, text_boxes_pre]
