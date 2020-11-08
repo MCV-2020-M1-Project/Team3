@@ -4,6 +4,8 @@ import cv2 as cv
 import numpy as np
 from tqdm import tqdm
 
+import imutils
+
 import pywt
 from skimage import feature
 from scipy.fftpack import dct, idct
@@ -241,10 +243,15 @@ def compute_distances(paintings, text_boxes, bbdd_histograms, descriptor, metric
         text_boxes_image = text_boxes[image_id]
         distances_image = []
         for painting_id, painting in enumerate(paintings_image):
-            if len(text_boxes_image) > painting_id:
-                text_box = text_boxes_image[painting_id]
-            else:
-                text_box = None
+            text_box = text_boxes_image[painting_id]
+            # [tlx,tly,brx,bry] = text_box
+            # cv.rectangle(painting, (tlx, tly), (brx, bry), (0,255,0), 10)
+            # cv.imshow('p', imutils.resize(painting,height=600))
+            # cv.waitKey()
+            # if len(text_boxes_image) > painting_id:
+            #     text_box = text_boxes_image[painting_id]
+            # else:
+            #     text_box = [0,0,0,0]
             hist = HISTOGRAM[descriptor](painting, text_box=text_box)
 
             distances_painting = []

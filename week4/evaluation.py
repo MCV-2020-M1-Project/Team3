@@ -85,7 +85,7 @@ def box_iou(boxA, boxB):
     return iou
 
 
-def mean_iou(gt_boxes_path, pred_boxes_path):
+def evaluate_text_boxes(gt_boxes_path, pred_boxes_path):
     groundtruth_text_boxes = pickle.load(open(gt_boxes_path, 'rb'))
     predicted_text_boxes = pickle.load(open(pred_boxes_path, 'rb'))
 
@@ -101,18 +101,22 @@ def mean_iou(gt_boxes_path, pred_boxes_path):
                 bry = gt_box[2][1]
                 groundtruth_text_boxes_eval.append([tlx,tly,brx,bry])
 
-    elif 'qsd2_w2' in gt_boxes_path:
+    # elif 'qsd2_w2' in gt_boxes_path:
+    else:
         for groundtruth_text_boxes_per_image in groundtruth_text_boxes:
             for groundtruth_text_box in groundtruth_text_boxes_per_image:
                 groundtruth_text_boxes_eval.append(groundtruth_text_box)
 
-    else:
-        groundtruth_text_boxes_eval = groundtruth_text_boxes
+    # else:
+    #     groundtruth_text_boxes_eval = groundtruth_text_boxes
 
     predicted_text_boxes_eval = []
     for img_id, predicted_text_boxes_per_image in enumerate(predicted_text_boxes):
         for predicted_text_box in predicted_text_boxes_per_image:
             predicted_text_boxes_eval.append(predicted_text_box)
+
+    print(f'Lenght: {len(groundtruth_text_boxes_eval)} --> GROUNDTRUTH: {groundtruth_text_boxes_eval}')
+    print(f'Lenght: {len(predicted_text_boxes_eval)} --> PREDICTED: {predicted_text_boxes_eval}')
 
     total_boxes = 0
     mean_iou = 0
@@ -120,9 +124,14 @@ def mean_iou(gt_boxes_path, pred_boxes_path):
     # Compute iou for each gt/predicted bounding box
     for box_idx, gt_box in enumerate(groundtruth_text_boxes_eval):
         pred_box = predicted_text_boxes_eval[box_idx]
+        print('----------------')
+        print(f'ID: {box_idx} --> {gt_box}, {pred_box}')
 
-        # compute the intersection over union and display it
-        iou = box_iou(gt_box, pred_box)
+        if pred_box is None:
+            iou = 0
+        else:
+            # compute the intersection over union and display it
+            iou = box_iou(gt_box, pred_box)
         mean_iou += iou
         total_boxes += 1
 
@@ -151,7 +160,7 @@ def output_predicted_paintings(query_list, paintings_predicted_list, paintings_g
 
         print('----------------------')
 
-def evaluate(paintings_predicted_list, params, k_list, verbose=False):
+def evaluate(params, k_list, verbose=False):
     if params['remove'] is not None:
         if params['remove']['bg']:
             bg_predicted_list = utils.path_to_list(params['paths']['results'], extension='png')
@@ -169,13 +178,16 @@ def evaluate(paintings_predicted_list, params, k_list, verbose=False):
         #     evaluate_text_extract(text_extract_predicted_list, text_extract_groundtruth_list)
 
         if params['remove']['text']:
-            text_boxes_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'))
-            text_boxes_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'text_boxes.pkl'))
-            # assert len(text_boxes_predicted_list) == len(text_boxes_groundtruth_list)
-            evaluate_text_boxes(text_boxes_predicted_list, text_boxes_groundtruth_list)
+            # text_boxes_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'))
+            # text_boxes_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'text_boxes.pkl'))
 
+            mean_iou = evaluate_text_boxes(os.path.join(params['paths']['query'], 'text_boxes.pkl'), os.path.join(params['paths']['results'], 'text_boxes.pkl'))
+            print('**********************')
+            print(f'Text bounding boxes evaluation: Mean IOU = {mean_iou}')
+
+
+    paintings_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'result.pkl'))
     paintings_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'gt_corresps.pkl'))
-
     if verbose:
         output_predicted_paintings(params['lists']['query'], paintings_predicted_list, paintings_groundtruth_list, max(k_list))
 

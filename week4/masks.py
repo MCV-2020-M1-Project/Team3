@@ -24,6 +24,8 @@ def get_painting_from_mask(img, bg_mask, painting_coords):
     bg_mask_painting = np.zeros(img.shape, dtype=np.uint8)
     bg_mask_painting[tly:bry, tlx:brx] = 255
 
+    combined = np.array(img.shape, dtype=img.dtype)
+
     # Combine the image and the background mask
     combined = cv.bitwise_and(img, bg_mask_painting)
 

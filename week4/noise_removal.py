@@ -24,8 +24,10 @@ def denoise_paintings(paintings, params, image_id):
         denoised_paintings.append(painting_denoised)
 
         if denoised:
+            # result_painting_path = os.path.join(params['paths']['results'],
+            #                                     image_id + '_' + str(painting_id) + '_denoised.jpg')
             result_painting_path = os.path.join(params['paths']['results'],
-                                                image_id + '_' + str(painting_id) + 'denoised.jpg')
+                                                image_id + '_' + str(painting_id) + '.jpg')
             cv.imwrite(result_painting_path, painting_denoised)
 
     return denoised_paintings
