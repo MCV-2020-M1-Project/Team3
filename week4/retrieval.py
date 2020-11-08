@@ -15,13 +15,14 @@ import week4.noise_removal as noise
 import week4.utils as utils
 import week4.feature_descriptors as fd
 
+
 def image_to_paintings(image_path, params):
     img = cv.imread(image_path)
     image_id = utils.get_image_id(image_path)
 
-    paintings=[img]
+    paintings = [img]
 
-    text_boxes=[None]
+    text_boxes = [None]
     if params['remove'] is not None:
         if params['remove']['bg']:
             [paintings, paintings_coords] = masks.remove_bg(img, params, image_id)
@@ -34,8 +35,8 @@ def image_to_paintings(image_path, params):
 
     return [paintings, text_boxes]
 
-def get_k_images(params, k):
 
+def get_k_images(params, k):
     pool_processes = 4
 
     paintings_predicted_list = []
@@ -46,8 +47,8 @@ def get_k_images(params, k):
 
         print('---Extracting paintings from images (optional: removing background or text)---')
         [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
-                                                  [path for path in params['lists']['query']]),
-                                                  total=len(params['lists']['query']))))
+                                                        [path for path in params['lists']['query']]),
+                                                 total=len(params['lists']['query']))))
         all_distances = []
 
         if params['color'] is not None:
@@ -56,8 +57,8 @@ def get_k_images(params, k):
 
             print('---Computing color bbdd_histograms---')
             bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
-                                              [path for path in params['lists']['bbdd']]),
-                                              total=len(params['lists']['bbdd'])))
+                                               [path for path in params['lists']['bbdd']]),
+                                        total=len(params['lists']['bbdd'])))
 
             print('---Computing color query_histograms and distances---')
             color_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
@@ -72,14 +73,14 @@ def get_k_images(params, k):
 
             print('...Computing texture bbdd_histograms...')
             bbdd_histograms = list(tqdm(p.imap(compute_bbdd_histograms_partial,
-                                              [path for path in params['lists']['bbdd']]),
-                                              total=len(params['lists']['bbdd'])))
+                                               [path for path in params['lists']['bbdd']]),
+                                        total=len(params['lists']['bbdd'])))
 
             print('---Computing texture query_histograms and distances---')
             texture_distances = histograms.compute_distances(paintings, text_boxes, bbdd_histograms,
-                                                           descriptor=params['texture']['descriptor'],
-                                                           metric=params['texture']['metric'],
-                                                           weight=params['texture']['weight'])
+                                                             descriptor=params['texture']['descriptor'],
+                                                             metric=params['texture']['metric'],
+                                                             weight=params['texture']['weight'])
 
             all_distances.append(texture_distances)
 
@@ -116,41 +117,78 @@ def get_k_images(params, k):
 
     return paintings_predicted_list
 
-def get_top_matches(query_list, bbdd_list, k = 5, threshold = 400):
 
-    def calculate_distance(matches):
-        dist = 0
-        for m in matches:
-            dist += m.distance
-        return dist/len(matches)
-
-    query_surf = []
-    for query in query_list:
-        im = cv.imread(query)
-        query_surf.append(fd.surf_descriptor(im, threshold))
+def get_matches(bbdd_surf, query_surf, k=5):
 
     query_matches = []
-    for bbdd in bbdd_list:
-        im = cv.imread(bbdd)
-        kp, des = fd.surf_descriptor(im, threshold)
-        if len(kp) > 0:
-            for qkpdes in query_surf:
-                q_kp, q_des = qkpdes
-                if len(q_kp) > 0:
-                    matches = fd.match_descriptors(q_des, des)
-                    if len(matches) > 2:
-                        idx = query_surf.index(qkpdes)
-                        if idx in range(len(query_matches)):
-                            query_matches[idx].append([bbdd_list.index(bbdd), matches])
-                        else:
-                            query_matches.append([[bbdd_list.index(bbdd), matches]])
 
-    results = []
+    q_kp, q_des = query_surf
+    if len(q_kp) > 0:
+        for bbdd in bbdd_surf:
+            kp, des = bbdd
+            if len(kp) > 0:
+                matches = fd.match_descriptors(q_des, des)
+                if len(matches) > 2:
+                    query_matches.append([bbdd_surf.index(bbdd), matches])
+    def calculate_distance(q_match):
+        dist = 0
+        for m in q_match:
+            dist += m.distance
+        return dist / len(q_match)
+
+    result = []
     for item in query_matches:
-        item.sort(key=lambda x: calculate_distance(x[1]))
+        idx, match = item
+        item.sort(key=lambda x: calculate_distance(match))
         if len(item) == 0:
-            results.append([-1])
+            result.append([-1])
         else:
-            results.append(item[:k])
+            result.append(item)
 
-    return results
+    return result
+
+def get_top_matches(params, k=5, threshold=400):
+
+    all_matches = []
+    processes = 4
+    paintings_predicted_list = []
+    with mp.Pool(processes=processes) as p:
+        image_to_paintings_partial = partial(image_to_paintings, params=params)
+
+        print('---Extracting paintings from images (optional: removing background or text)---')
+        [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+                                                        [path for path in params['lists']['query']]),
+                                                 total=len(params['lists']['query']))))
+        all_distances = []
+
+        compute_bbdd_surf_partial = partial(fd.surf_descriptor,
+                                            threshold=threshold)
+        print('---Computing bbdd_surf---')
+        bbdd_surf = list(tqdm(p.imap(compute_bbdd_surf_partial,
+                                     [path for path in params['lists']['bbdd']])))
+
+        compute_query_surf_partial = partial(fd.surf_descriptor,
+                                            threshold=threshold)
+        print('---Computing query_surf---')
+        query_surf = list(tqdm(p.imap(compute_query_surf_partial,
+                                      [path for path in params['lists']['query']])))
+
+        compute_matches_partial = partial(get_matches,
+                                         bbdd_surf, k=k)
+        print('---Computing matches---')
+        all_distances.append(list(tqdm(p.imap(compute_matches_partial,
+                         [query for query in query_surf]))))
+
+        for q in range(len(paintings)):
+            qlist = []
+            for sq in range(len(paintings[q])):
+                dist = np.array(all_distances[0][q][sq])
+                for f in range(1, len(all_distances)):
+                    dist += all_distances[f][q][sq]
+                nearest_indices = np.argsort(dist)[:k]
+                result_list = [index for index in nearest_indices]
+                qlist.append(result_list)
+            paintings_predicted_list.append(qlist)
+
+    return paintings_predicted_list
+
