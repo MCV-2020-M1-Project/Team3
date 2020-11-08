@@ -100,3 +100,19 @@ def get_k_images(painting, text_box, bbdd_texts, k=10, distance_metric="Hamming"
 
 
     return [predicted_image[0] for predicted_image in k_predicted_images], author_images,distances
+
+def compute_distances(painting, text_box, bbdd_texts, distance_metric="Hamming"):
+
+    text = get_text(painting, text_box)
+    distances = {}
+
+    for bbdd_id, bbdd_text in bbdd_texts.items():
+
+        if bbdd_text!='empty':
+            bbdd_text=bbdd_text.replace("(","").replace("'"," ").replace(")","")
+            distances[bbdd_id] = get_text_distance(text.lower(), bbdd_text.split(",",1)[0].strip(),distance_metric)
+
+        else:
+            distances[bbdd_id]=100
+
+    return distances
