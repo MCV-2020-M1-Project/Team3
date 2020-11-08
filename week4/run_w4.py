@@ -146,14 +146,9 @@ def run():
 
     params = lists_to_params(params, bbdd_list, query_list)
 
-    if args.use_text:
-        text_boxes_groundtruth = utils.load_pickle(os.path.join(query_path, 'text_boxes.pkl'))
-
-    paintings_predicted_list, text_boxes = retrieval.get_k_images(params, k=max(k))
+    paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
     utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
-
-    utils.save_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'), text_boxes)
 
     if not args.test:
         evaluation.evaluate(params, k, verbose=args.verbose)
