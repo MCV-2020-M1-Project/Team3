@@ -168,7 +168,7 @@ def run():
         evaluation.evaluate(paintings_predicted_list, params, k, verbose=args.verbose)
 
     if args.surf:
-        qm = retrieval.get_top_matches(params, k, threshold=5000)
+        qm = retrieval.get_top_matches(params, max(k), threshold=5000)
         evaluation.evaluate(qm, params, k, verbose=args.verbose)
 
 # from week4 import sift

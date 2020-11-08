@@ -10,6 +10,16 @@ def surf_descriptor(image, threshold=400):
 
     return (kp, des)
 
+def surf_descriptor_painting(paintings, threshold=400):
+    #Find the SURF keypoints and descriptors of a given image
+    results=[]
+    for pid, p in enumerate(paintings):
+        img_gray = cv.cvtColor(p, cv.COLOR_BGR2GRAY)
+        surf = cv.xfeatures2d.SURF_create(threshold, )
+        kp, des = surf.detectAndCompute(img_gray, None)
+        results.append((kp, des))
+    return results
+
 def match_descriptors(d1, d2, type='BRUTE'):
     # Matching descriptor vectors with a brute force matcher
     # Since SURF is a floating-point descriptor NORM_L2 is used
