@@ -118,18 +118,24 @@ def get_k_images(params, k):
     return paintings_predicted_list
 
 
-def get_matches(bbdd_surf, query_surf, k=5):
+def get_matches(bbdd_surf, query_surf):
 
-    query_matches = []
+    query_matches_image = []
+    for q in query_surf:
+        query_matches_paintings=[]
+        q_kp, q_des = q
+        if len(q_kp) > 0:
+            for bbdd in bbdd_surf:
+                kp, des = bbdd
+                if len(kp) > 0:
+                    matches = fd.match_descriptors(q_des, des)
+                    if len(matches) > 2:
+                        query_matches_paintings.append([bbdd_surf.index(bbdd), matches])
+        query_matches_image.append(query_matches_paintings)
 
-    q_kp, q_des = query_surf
-    if len(q_kp) > 0:
-        for bbdd in bbdd_surf:
-            kp, des = bbdd
-            if len(kp) > 0:
-                matches = fd.match_descriptors(q_des, des)
-                if len(matches) > 2:
-                    query_matches.append([bbdd_surf.index(bbdd), matches])
+    return query_matches_image
+
+def sort(q_matches):
     def calculate_distance(q_match):
         dist = 0
         for m in q_match:
@@ -137,13 +143,12 @@ def get_matches(bbdd_surf, query_surf, k=5):
         return dist / len(q_match)
 
     result = []
-    for item in query_matches:
-        idx, match = item
-        item.sort(key=lambda x: calculate_distance(match))
-        if len(item) == 0:
-            result.append([-1])
+    for item in q_matches:
+        item.sort(key=lambda x: calculate_distance(item[1]))
+        if len(item[1]) < 10:
+            result.append(-1)
         else:
-            result.append(item)
+            result.append(item[0])
 
     return result
 
@@ -159,7 +164,7 @@ def get_top_matches(params, k=5, threshold=400):
         [paintings, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
                                                         [path for path in params['lists']['query']]),
                                                  total=len(params['lists']['query']))))
-        all_distances = []
+        matched = []
 
         compute_bbdd_surf_partial = partial(fd.surf_descriptor,
                                             threshold=threshold)
@@ -167,29 +172,27 @@ def get_top_matches(params, k=5, threshold=400):
         bbdd_surf = list(tqdm(p.imap(compute_bbdd_surf_partial,
                                      [path for path in params['lists']['bbdd']])))
 
-        compute_query_surf_partial = partial(fd.surf_descriptor,
+        compute_query_surf_partial = partial(fd.surf_descriptor_painting,
                                             threshold=threshold)
         print('---Computing query_surf---')
         query_surf = list(tqdm(p.imap(compute_query_surf_partial,
-                                      [path for path in params['lists']['query']])))
+                                      [p for p in paintings])))
 
         compute_matches_partial = partial(get_matches,
-                                         bbdd_surf, k=k)
+                                         bbdd_surf)
         print('---Computing matches---')
-        all_distances.append(list(tqdm(p.imap(compute_matches_partial,
+        matched.append(list(tqdm(p.imap(compute_matches_partial,
                          [query for query in query_surf]))))
 
-        for q in range(len(paintings)):
+        for im in range(len(matched)):
             qlist = []
-            for sq in range(len(paintings[q])):
-                dist = np.array(all_distances[0][q][sq])
-                for f in range(1, len(all_distances)):
-                    dist += all_distances[f][q][sq]
-                nearest_indices = np.argsort(dist)[:k]
-                result_list = [index for index in nearest_indices]
-                qlist.append(result_list)
+            for im_m in matched[im]:
+                im_list = []
+                for match in im_m:
+                    im_list.append(sort(match[1]))
+                qlist.append(im_list[:k])
             paintings_predicted_list.append(qlist)
-
+    print(paintings_predicted_list)
     return paintings_predicted_list
 
 
