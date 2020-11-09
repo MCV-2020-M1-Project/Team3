@@ -8,7 +8,7 @@ import week4.evaluation as evaluation
 
 import week4.utils as utils
 
-def get_painting_from_mask(img, bg_mask, painting_coords, result_painting_path):
+def get_painting_from_mask(img, bg_mask, painting_coords):
     """
     get_painting_from_mask()
 
@@ -24,6 +24,8 @@ def get_painting_from_mask(img, bg_mask, painting_coords, result_painting_path):
     bg_mask_painting = np.zeros(img.shape, dtype=np.uint8)
     bg_mask_painting[tly:bry, tlx:brx] = 255
 
+    combined = np.array(img.shape, dtype=img.dtype)
+
     # Combine the image and the background mask
     combined = cv.bitwise_and(img, bg_mask_painting)
 
@@ -38,9 +40,6 @@ def get_painting_from_mask(img, bg_mask, painting_coords, result_painting_path):
 
     # Get the contents of the bounding box.
     painting = combined[x0:x1, y0:y1]
-
-    # Save extracted painting
-    cv.imwrite(result_painting_path, painting)
 
     return painting
 
@@ -86,87 +85,18 @@ def get_bg_mask(img, max_paintings):
           paintings_coords_aux.append([x,y,x+w,y+h])
           found = True
 
-    paintings_coords = []
+          if len(paintings_coords_aux) == max_paintings:
+              break
+
     if not found:
-        paintings_coords.append([0,0,img.shape[1],img.shape[0]])
+        paintings_coords = [0,0,img.shape[1],img.shape[0]]
 
     else:
-        if len(paintings_coords_aux) == 2:
-            tlx1 = paintings_coords_aux[0][0]
-            tly1 = paintings_coords_aux[0][1]
-            brx1 = paintings_coords_aux[0][2]
-            bry1 = paintings_coords_aux[0][3]
-
-            tlx2 = paintings_coords_aux[1][0]
-            tly2 = paintings_coords_aux[1][1]
-            brx2 = paintings_coords_aux[1][2]
-            bry2 = paintings_coords_aux[1][3]
-
-            if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
-                paintings_coords.append(paintings_coords_aux[0])
-                paintings_coords.append(paintings_coords_aux[1])
-            else:
-                paintings_coords.append(paintings_coords_aux[1])
-                paintings_coords.append(paintings_coords_aux[0])
-
-        elif len(paintings_coords_aux)==3:
-            tlx1 = paintings_coords_aux[0][0]
-            tly1 = paintings_coords_aux[0][1]
-            brx1 = paintings_coords_aux[0][2]
-            bry1 = paintings_coords_aux[0][3]
-
-            tlx2 = paintings_coords_aux[1][0]
-            tly2 = paintings_coords_aux[1][1]
-            brx2 = paintings_coords_aux[1][2]
-            bry2 = paintings_coords_aux[1][3]
-
-            tlx3 = paintings_coords_aux[2][0]
-            tly3 = paintings_coords_aux[2][1]
-            brx3 = paintings_coords_aux[2][2]
-            bry3 = paintings_coords_aux[2][3]
-
-            left_12 = tlx1 < tlx2 and brx1 < tlx2
-            left_13 = tlx1 < tlx3 and brx1 < tlx3
-            left_23 = tlx2 < tlx3 and brx2 < tlx3
-            above_12 = tly1 < tly2 and bry1 < tly2
-            above_13 = tly1 < tly3 and bry1 < tly3
-            above_23 = tly2 < tly3 and bry2 < tly3
-
-            if (left_12 and left_13) or (above_12  and above_13):
-                paintings_coords.append(paintings_coords_aux[0])
-                if left_23 or above_23:
-                    paintings_coords.append(paintings_coords_aux[1])
-                    paintings_coords.append(paintings_coords_aux[2])
-                else:
-                    paintings_coords.append(paintings_coords_aux[2])
-                    paintings_coords.append(paintings_coords_aux[1])
-            elif left_12 or above_12:
-                paintings_coords.append(paintings_coords_aux[2])
-                paintings_coords.append(paintings_coords_aux[0])
-                paintings_coords.append(paintings_coords_aux[1])
-
-            elif left_13 or above_13:
-                paintings_coords.append(paintings_coords_aux[1])
-                paintings_coords.append(paintings_coords_aux[0])
-                paintings_coords.append(paintings_coords_aux[2])
-            else:
-                if left_23 or above_23:
-                    paintings_coords.append(paintings_coords_aux[1])
-                    paintings_coords.append(paintings_coords_aux[2])
-                    paintings_coords.append(paintings_coords_aux[0])
-                else:
-                    paintings_coords.append(paintings_coords_aux[2])
-                    paintings_coords.append(paintings_coords_aux[1])
-                    paintings_coords.append(paintings_coords_aux[0])
-
-        else:
-            paintings_coords.append(paintings_coords_aux[0])
+        paintings_coords = utils.sort_paintings(paintings_coords_aux)
 
     return [mask, paintings_coords]
 
 def remove_bg(img, params, image_id):
-    #We need to fix it
-    # [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'])
     [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'])
 
     result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')
@@ -174,7 +104,11 @@ def remove_bg(img, params, image_id):
 
     paintings = []
     for painting_id, painting_coords in enumerate(paintings_coords):
-        result_painting_path = os.path.join(params['paths']['results'], image_id + '_' + str(painting_id) + '.jpg')
-        paintings.append(get_painting_from_mask(img, mask, painting_coords, result_painting_path))
+        painting = get_painting_from_mask(img, mask, painting_coords)
+        paintings.append(painting)
+
+        result_painting_path = os.path.join(params['paths']['results'],
+                                            image_id + '_' + str(painting_id) + '.jpg')
+        cv.imwrite(result_painting_path, painting)
 
     return [paintings, paintings_coords]
