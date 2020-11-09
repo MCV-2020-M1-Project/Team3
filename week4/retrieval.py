@@ -49,7 +49,7 @@ def image_to_paintings(image_path, params):
 
 def get_k_images(params, k):
 
-    pool_processes = 16
+    pool_processes = 4
 
     paintings_predicted_list = []
 
