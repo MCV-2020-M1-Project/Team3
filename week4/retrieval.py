@@ -36,13 +36,13 @@ def image_to_paintings(image_path, params):
 
         if params['remove']['text']:
             [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
-            for idx,painting in enumerate(paintings):
-                if text_boxes[idx] is not None:
-                    text_detected=text_detection.get_text(painting,text_boxes[idx])
-
-                    predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
-                    with open(predicted_text_path,"a+") as f:
-                        f.write(text_detected+"\n")
+            # for idx,painting in enumerate(paintings):
+            #     if text_boxes[idx] is not None:
+            #         text_detected=text_detection.get_text(painting,text_boxes[idx])
+            #
+            #         predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
+            #         with open(predicted_text_path,"a+") as f:
+            #             f.write(text_detected+"\n")
 
     return [paintings, text_boxes, text_boxes_shift]
 
@@ -117,26 +117,23 @@ def get_k_images(params, k):
                     predicted_paintings_image = []
                     for painting_id, painting in enumerate(paintings_image):
                         painting_kp, painting_des = feature_descriptors.orb_descriptor(painting)
-                        matching = []
                         if len(painting_kp) > 0:
 
-                            predicted_paintings = []
-
                             match_descriptors_partial = partial(feature_descriptors.match_descriptors, query_des=painting_des)
-                            matches = p.imap(match_descriptors_partial, [kp_des for kp_des in bbdd_descriptors])
+                            matches = p.map(match_descriptors_partial, [kp_des for kp_des in bbdd_descriptors])
 
-                            # matches_filtered = feature_descriptors.get_matches_filtered(matches)
+                            predicted_paintings = feature_descriptors.get_top_matches(matches)
 
-                            matches_distances = [feature_descriptors.calculate_distance(m) for m in matches]
-                            predicted_paintings = sorted(range(len(matches_distances)), key=matches_distances.__getitem__)
-
-                            # matches.argsort(key=lambda x: _calculate_distance(x))
-                            # predicted_paintings = [m for m in matches]
-
-                            if len(predicted_paintings) == 0:
-                                predicted_paintings_image.append([-1])
-                            else:
+                            if predicted_paintings is not None:
                                 predicted_paintings_image.append(predicted_paintings[:k])
+                            else:
+                                predicted_paintings_image.append([-1])
+
+                        else:
+                            print('???????????????????????????????????????????????????????????????????????')
+                            print(f'Image ID: {image_id}, Painting ID: {painting_id}')
+                            predicted_paintings_image.append([-1])
+
                     predicted_paintings_all.append(predicted_paintings_image)
 
                 return predicted_paintings_all

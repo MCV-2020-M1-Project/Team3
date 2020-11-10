@@ -139,7 +139,7 @@ def args_to_params(args):
         }
     if not True in (args.use_color, args.use_texture, args.use_text,
                     args.use_sift, args.use_orb, args.use_surf):
-        sys.error('No descriptor method specified')
+        sys.exit('[ERROR] No descriptor method specified')
 
     return params
 

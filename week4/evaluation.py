@@ -115,8 +115,8 @@ def evaluate_text_boxes(gt_boxes_path, pred_boxes_path):
         for predicted_text_box in predicted_text_boxes_per_image:
             predicted_text_boxes_eval.append(predicted_text_box)
 
-    print(f'Lenght: {len(groundtruth_text_boxes_eval)} --> GROUNDTRUTH: {groundtruth_text_boxes_eval}')
-    print(f'Lenght: {len(predicted_text_boxes_eval)} --> PREDICTED: {predicted_text_boxes_eval}')
+    # print(f'Lenght: {len(groundtruth_text_boxes_eval)} --> GROUNDTRUTH: {groundtruth_text_boxes_eval}')
+    # print(f'Lenght: {len(predicted_text_boxes_eval)} --> PREDICTED: {predicted_text_boxes_eval}')
 
     total_boxes = 0
     mean_iou = 0
@@ -124,8 +124,8 @@ def evaluate_text_boxes(gt_boxes_path, pred_boxes_path):
     # Compute iou for each gt/predicted bounding box
     for box_idx, gt_box in enumerate(groundtruth_text_boxes_eval):
         pred_box = predicted_text_boxes_eval[box_idx]
-        print('----------------')
-        print(f'ID: {box_idx} --> {gt_box}, {pred_box}')
+        # print('----------------')
+        # print(f'ID: {box_idx} --> {gt_box}, {pred_box}')
 
         if pred_box is None:
             iou = 0

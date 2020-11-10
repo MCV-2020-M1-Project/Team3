@@ -2,6 +2,8 @@ import cv2 as cv
 import numpy as np
 from tqdm import tqdm
 
+from skimage import feature
+
 import week4.text_boxes as text_boxes
 
 def surf_descriptor(image, threshold=400):
@@ -30,63 +32,42 @@ def get_matches_filtered(matches, th=450):
             matches_filtered.append(m)
     return matches_filtered
 
-def orb_descriptor(img,bounding_rm=True):
+def orb_descriptor(img, bounding_rm=True):
     img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    orb = cv.ORB_create(2000)
+
+    img_gray = cv.resize(img_gray, (256, 256), interpolation=cv.INTER_AREA)
+    orb = cv.ORB_create(scaleFactor=1.1, WTA_K=2, fastThreshold=5)
+
+    # orb = cv.ORB_create()
     if bounding_rm:
-        bounding = text_boxes.detect_text_box(img)
-        bounding_mask = np.zeros(img_gray.shape,np.uint8)
-        bounding_mask[bounding[1]:bounding[3],bounding[0]:bounding[2]] = 255
-        bounding_mask = (255-bounding_mask)
-        kp,des=orb.detectAndCompute(img_gray,mask = bounding_mask)
+        text_box = text_boxes.detect_text_box(img)
+        mask = np.zeros(img.shape,np.uint8)
+        mask[text_box[1]:text_box[3],text_box[0]:text_box[2]] = 255
+        mask = (255-mask)
+        mask = cv.resize(mask, (256, 256), interpolation=cv.INTER_AREA)
+
+        kp,des=orb.detectAndCompute(img_gray, mask=None) # mask=None --> better results (fix boundingx box)
     else:
-        kp,des = orb.detectAndCompute(img_gray,mask = None)
+        kp,des = orb.detectAndCompute(img_gray, mask=None)
 
     return (kp,des)
 
-def match_descriptors(bbdd_kp_des, query_des, type='BRUTE'):
-    # Matching descriptor vectors with a brute force matcher
-    # Since SURF is a floating-point descriptor NORM_L2 is used
-    # if type == 'BRUTE':
-    #     dm_type = cv.DescriptorMatcher_BRUTEFORCE
-    # elif type == 'FLANN':
-    #     dm_type = cv.DescriptorMatcher_FLANNBASED
-    # #elif type == 'HAMMING':
-    # #    dm_type = cv.DescriptorMatcher_BRUTEFORCE_HAMMING
-    #
-    # matcher = cv.DescriptorMatcher_create(dm_type)
-    # matches = matcher.match(d1, d2)
-
-    bd_kp, bd_des = bbdd_kp_des
-    if len(bd_kp) > 0:
-        # create BFMatcher object
-        bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
-        # Match descriptors.
-        matches = bf.match(query_des,bd_des)
-        # print(len(matches))
-        if len(matches) > 150:
-            return matches
-        else:
-            return None
+def get_top_matches(matches):
+    top_matches = np.argsort(np.array(matches))[-10:][::-1]
+    if matches[top_matches[0]] >= 4:
+        return top_matches
     else:
         return None
+
+def match_descriptors(bbdd_kp_des, query_des):
+    bd_kp, bd_des = bbdd_kp_des
+    if len(bd_kp) > 0:
+        matches = len(feature.match_descriptors(bd_des, query_des,
+                                                metric='hamming', max_ratio=0.8, max_distance=0.8, p=1))
+    else:
+        matches = 0
+    return matches
 
 def compute_bbdd_orb_descriptors(bbdd_path):
     im = cv.imread(bbdd_path)
     return orb_descriptor(im, False)
-
-def compute_bbdd_orb_query_descriptors(paintings,bbdd_descriptors):
-    def calculate_distance(matches):
-        dist = 0
-        for m in matches:
-            dist += m.distance
-        return dist/len(matches)
-
-    query_descriptors = []
-    query_matches=[]
-    for image_id, paintings_image in tqdm(enumerate(paintings), total=len(paintings)):
-        for painting_id, painting in enumerate(paintings_image):
-            des = orb_descriptor(painting)
-            query_matches.append(des)
-
-    return query_matches

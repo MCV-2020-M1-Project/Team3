@@ -3,6 +3,9 @@ import cv2 as cv
 import numpy as np
 from skimage import feature
 
+from random import randrange
+import imutils
+
 import scipy.stats as stats
 import week4.evaluation as evaluation
 
@@ -45,7 +48,7 @@ def get_painting_from_mask(img, bg_mask, painting_coords):
 
 
 # -------Get background mask-----------
-def get_bg_mask(img, max_paintings):
+def get_bg_mask(img, max_paintings, image_id):
     """
     get_bg_mask()
 
@@ -64,14 +67,31 @@ def get_bg_mask(img, max_paintings):
     closed = cv.morphologyEx(mask_copy, cv.MORPH_CLOSE, kernel)
 
     cnts = cv.findContours(closed.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+
+    cnts = imutils.grab_contours(cnts)
+    cnts = sorted(cnts, key = cv.contourArea, reverse = True)[:4]
 
     # loop over the contours from bigger to smaller, and find the biggest one with the right orientation
     for c in cnts:
-          # # approximate to the rectangle
-          x, y, w, h = cv.boundingRect(c)
-          if w > gray.shape[1]/8 and h > gray.shape[0]/6:
-              mask[y:y+h,x:x+w]=255 # fill the mask
+        peri = cv.arcLength(c, True)
+        approx = cv.approxPolyDP(c, 0.015 * peri, True)
+    	# if our approximated contour has four points, then
+    	# we can assume that we have found our screen
+        # if len(approx) == 4:
+            # cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 10)
+        # if image_id == 25:
+        #     cv.drawContours(img, [approx], -1, (0, 255, 0), 3)
+        #     cv.imshow(str(randrange(10)),imutils.resize(img, height=600))
+        #     cv.waitKey()
+
+        # # # approximate to the rectangle
+        x, y, w, h = cv.boundingRect(c)
+        if w > gray.shape[1]/8 and h > gray.shape[0]/6:
+            # cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 10)
+            # cv.imshow('img',imutils.resize(img, height=600))
+            # cv.waitKey()
+            mask[y:y+h,x:x+w]=255 # fill the mask
 
     found = False
     mask = cv.convertScaleAbs(mask)
@@ -97,7 +117,7 @@ def get_bg_mask(img, max_paintings):
     return [mask, paintings_coords]
 
 def remove_bg(img, params, image_id):
-    [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'])
+    [mask, paintings_coords] = get_bg_mask(img, params['remove']['max_paintings'], int(image_id))
 
     result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')
     cv.imwrite(result_bg_path, mask)

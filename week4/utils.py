@@ -7,7 +7,7 @@ from glob import glob
 def path_to_list(data_path, extension='jpg'):
     path_list = sorted(glob(os.path.join(data_path,'*.'+extension)))
     if not path_list:
-        str = 'No .' + extension + ' files found in directory ' + data_path
+        str = '[ERROR] No .' + extension + ' files found in directory ' + data_path
         sys.exit(str)
     return path_list
 
