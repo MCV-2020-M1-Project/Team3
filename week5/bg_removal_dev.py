@@ -1,33 +1,4 @@
 
-
-# cnts = cv.findContours(closed.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-#     # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-
-#     cnts = imutils.grab_contours(cnts)
-#     cnts = sorted(cnts, key = cv.contourArea, reverse = True)[:4]
-
-#     # loop over the contours from bigger to smaller, and find the biggest one with the right orientation
-#     for c in cnts:
-#         peri = cv.arcLength(c, True)
-#         approx = cv.approxPolyDP(c, 0.015 * peri, True)
-#         # if our approximated contour has four points, then
-#         # we can assume that we have found our screen
-#         # if len(approx) == 4:
-#             # cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 10)
-#         if image_id == 25:
-#             cv.drawContours(img, [approx], -1, (0, 255, 0), 3)
-#             cv.imshow(str(randrange(10)),imutils.resize(img, height=600))
-#             cv.waitKey()
-
-#         # # # approximate to the rectangle
-#         x, y, w, h = cv.boundingRect(c)
-#         if w > gray.shape[1]/8 and h > gray.shape[0]/6:
-#             # cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 10)
-#             # cv.imshow('img',imutils.resize(img, height=600))
-#             # cv.waitKey()
-#             mask[y:y+h,x:x+w]=255 # fill the mask
-# -*- coding: utf-8 -*-
-
 import cv2 as cv
 import numpy as np
 from skimage import feature
@@ -35,13 +6,14 @@ import imutils
 import os
 import operator
 import math
+import pickle
 # ##----TEST AREA----
 
 def get_angle(box):
     lower_corners=sorted(box, key=operator.itemgetter(1),reverse=True)
     m=(lower_corners[0][1]-lower_corners[1][1])/(lower_corners[0][0]-lower_corners[1][0])
     angle_in_radians = math.atan(m)
-    angle_in_degrees = int(-math.degrees(angle_in_radians))
+    angle_in_degrees = -math.degrees(angle_in_radians)
     if(angle_in_degrees<0):
         angle_in_degrees+=180
     width=abs(lower_corners[0][0]-lower_corners[1][0])
@@ -50,6 +22,43 @@ def get_angle(box):
     return angle_in_degrees,width,height
 
 
+
+
+def discard_rectangles(rectangles):
+    
+    angles = [item[2] for item in rectangles ]
+    mean_angle= sum(angles) / len(angles) 
+    print(rectangles)
+    if len(rectangles)>1:
+           
+        biggest_area_rect = rectangles[0]
+        clean_rectangles=[biggest_area_rect]
+        
+        cx1 = biggest_area_rect[0][0]
+        cy1 = biggest_area_rect[0][1]
+        w1 = biggest_area_rect[1][1]
+        h1 = biggest_area_rect[1][0]
+    
+        for rect in rectangles[1:]:
+            # to check if different rotation 
+            different_angle=(abs(rect[2]-mean_angle)<5)
+            # to check they are overlapping
+            cx2=rect[0][0]
+            cy2=rect[0][1]
+            
+            overlapping = ((cx1-w1/2) < cx2 < (cx1+w1/2)) and ((cy1-h1/2) < cy2 < (cy1+h1/2))
+    
+            if different_angle and not overlapping:
+                clean_rectangles.append(rect)
+    
+    else:
+         clean_rectangles=rectangles
+        
+    return clean_rectangles
+    
+    
+    
+    
 def get_mask_M7(img):
     
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -61,7 +70,6 @@ def get_mask_M7(img):
     mask1=cv.convertScaleAbs(mask1)
 
     # cv.imshow("mask", imutils.resize(mask1,height=500))
-    # cv.imshow("mask2", imutils.resize(mask2,height=500))
     # cv.waitKey()
     
     # 20,20
@@ -70,7 +78,6 @@ def get_mask_M7(img):
 
     
     # cv.imshow("closed", imutils.resize(closed,height=500))
-    # cv.imshow("closed2", imutils.resize(closed2,height=500))
     # cv.waitKey()
     
     cnts = cv.findContours(closed.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -79,13 +86,17 @@ def get_mask_M7(img):
     cnts = sorted(cnts, key = cv.contourArea, reverse = True)[:3]
     
     w_img=img.shape[1]
-    print(w_img)
     h_img=img.shape[0]
     area_img=w_img*h_img
-    
-    paintings_coords=[]
+
+    rectangles=[]
     for c in cnts:
-        rect = cv.minAreaRect(c)
+        rectangles.append(cv.minAreaRect(c))
+    
+    clean_rectangles=discard_rectangles(rectangles) 
+    
+    paintings_coords=[]        
+    for rect in clean_rectangles:        
         box = cv.boxPoints(rect)
         box = np.int0(box)
        
@@ -101,17 +112,19 @@ def get_mask_M7(img):
             paintings_coords.append([angle,[p1,p2,p3,p4]])
             mask=cv.fillConvexPoly(mask,box,255)
             cv.drawContours(img, [box], 0, (36,255,12), 4)
-            
+
     cv.imshow("img",imutils.resize(img,height=700))
     cv.waitKey()
 
     return mask, paintings_coords
 
-# query_path = 'data/qsd1_w5/00010.jpg'
+# query_path = 'data/qsd1_w5/00015.jpg'
 # img = cv.imread(query_path)
 # mask,coords= get_mask_M7(img)
-# print(coords)
+# print("detected values: {} ".format(coords))
+
 query_path = 'data/qsd1_w5'
+gt = pickle.load(open(os.path.join(query_path, "frames.pkl"), 'rb'))
 
 for query_filename in sorted(os.listdir(query_path)):
     if query_filename.endswith('.jpg'):
@@ -119,7 +132,7 @@ for query_filename in sorted(os.listdir(query_path)):
         image_path = os.path.join(query_path, query_filename)
         img = cv.imread(image_path)
         mask, coords=get_mask_M7(img)
-        print(coords)
+        print("detected values: {} ,\n gt : {}".format(coords,gt[image_id]))
         cv.imshow("mask",imutils.resize(mask,height=700))
         cv.waitKey()
 
