@@ -23,12 +23,13 @@ def get_angle(box):
 
 
 
-
-def discard_rectangles(rectangles):
     
-    angles = [item[2] for item in rectangles ]
-    mean_angle= sum(angles) / len(angles) 
-    print(rectangles)
+def area_rect(e):
+    area=e[1][0]*e[1][1]
+    return area
+
+def discard_overlapping_rectangles(rectangles):
+    
     if len(rectangles)>1:
            
         biggest_area_rect = rectangles[0]
@@ -40,21 +41,19 @@ def discard_rectangles(rectangles):
         h1 = biggest_area_rect[1][0]
     
         for rect in rectangles[1:]:
-            # to check if different rotation 
-            different_angle=(abs(rect[2]-mean_angle)<5)
             # to check they are overlapping
             cx2=rect[0][0]
             cy2=rect[0][1]
             
             overlapping = ((cx1-w1/2) < cx2 < (cx1+w1/2)) and ((cy1-h1/2) < cy2 < (cy1+h1/2))
     
-            if different_angle and not overlapping:
+            if not overlapping:
                 clean_rectangles.append(rect)
     
     else:
          clean_rectangles=rectangles
         
-    return clean_rectangles
+    return sorted(clean_rectangles, key = area_rect, reverse = True)
     
     
     
@@ -76,7 +75,6 @@ def get_mask_M7(img):
     kernel = cv.getStructuringElement(cv.MORPH_RECT,(20,20))
     closed = cv.morphologyEx(mask1, cv.MORPH_CLOSE, kernel)
 
-    
     # cv.imshow("closed", imutils.resize(closed,height=500))
     # cv.waitKey()
     
@@ -93,9 +91,12 @@ def get_mask_M7(img):
     for c in cnts:
         rectangles.append(cv.minAreaRect(c))
     
-    clean_rectangles=discard_rectangles(rectangles) 
-    
-    paintings_coords=[]        
+    clean_rectangles=discard_overlapping_rectangles(rectangles) 
+
+
+    paintings_coords=[]
+    previous_angle = None
+        
     for rect in clean_rectangles:        
         box = cv.boxPoints(rect)
         box = np.int0(box)
@@ -105,20 +106,28 @@ def get_mask_M7(img):
         p3=(box[2][0],box[2][1])
         p4=(box[3][0],box[3][1])
         angle,w_rect,h_rect=get_angle(box)
-        
-        area_rect=w_rect*h_rect
-        
-        if(area_rect>0.07*area_img):
-            paintings_coords.append([angle,[p1,p2,p3,p4]])
-            mask=cv.fillConvexPoly(mask,box,255)
-            cv.drawContours(img, [box], 0, (36,255,12), 4)
 
-    cv.imshow("img",imutils.resize(img,height=700))
+        area_rect=w_rect*h_rect
+        if previous_angle is None:
+            if(area_rect>0.07*area_img):
+                paintings_coords.append([angle,[p1,p2,p3,p4]])
+                mask=cv.fillConvexPoly(mask,box,255)
+                cv.drawContours(img, [box], 0, (36,255,12), 4)
+                previous_angle=angle
+        else:
+            if(abs(angle-previous_angle)<5 or abs(angle-previous_angle)>175 ) and (area_rect>0.07*area_img):
+                paintings_coords.append([angle,[p1,p2,p3,p4]])
+                mask=cv.fillConvexPoly(mask,box,255)
+                cv.drawContours(img, [box], 0, (36,255,12), 4)
+                previous_angle=angle
+                
+    
+    cv.imshow("img",imutils.resize(img,height=500))
     cv.waitKey()
 
     return mask, paintings_coords
 
-# query_path = 'data/qsd1_w5/00015.jpg'
+# query_path = 'data/qsd1_w5/00019.jpg'
 # img = cv.imread(query_path)
 # mask,coords= get_mask_M7(img)
 # print("detected values: {} ".format(coords))
