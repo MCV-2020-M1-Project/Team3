@@ -84,7 +84,7 @@ def detect_text_box2(img):
         final_contours.append(final_contours_aux[max_area_idx])
     else:
         final_contours.append([0,0,0,0])
-    else:
+
         final_contours_aux2 = []
         print('aaaa')
         for idx in range(len(cnts)):

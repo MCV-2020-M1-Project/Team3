@@ -120,9 +120,6 @@ def get_k_images(params, k):
                         painting_kp, painting_des = feature_descriptors.orb_descriptor(painting)
                         if len(painting_kp) > 0:
 
-                            cv.imshow('img', painting)
-                            cv.waitKey()
-
                             match_descriptors_partial = partial(feature_descriptors.match_descriptors, query_des=painting_des)
                             matches = p.map(match_descriptors_partial, [kp_des for kp_des in bbdd_descriptors])
 
