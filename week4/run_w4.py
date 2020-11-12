@@ -25,7 +25,7 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--remove_bg', action='store_true',
                         help='remove background from images in order to extract paintings')
 
-    parser.add_argument('--max_paintings', type=int, default=1,
+    parser.add_argument('--max_paintings', type=int, default=3,
                         help='maximum number of paintings to extract from an image after removing the background')
 
     parser.add_argument('--remove_text', action='store_true',
@@ -141,8 +141,8 @@ def args_to_params(args):
             'surf': args.use_surf
         }
     if not True in (args.use_color, args.use_texture, args.use_text,
-                    args.use_sift, args.use_orb, args.use_surf, args.cluster_images):
-        sys.error('No descriptor method specified')
+                    args.use_sift, args.use_orb, args.use_surf):
+        sys.exit('[ERROR] No descriptor method specified')
 
     return params
 

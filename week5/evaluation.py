@@ -5,10 +5,13 @@ import numpy as np
 import cv2 as cv
 import pickle
 import os
-
+from sklearn.metrics import jaccard_score
 import ml_metrics as mlm
 
-import week4.utils as utils
+import week5.utils as utils
+
+# -------------------------------------------
+# print(f'Img ID: {image_id} -> Err: {ang_error:.2f} Gt: {gt_angles[kk]:.2f} Pred: {hy_angles[kk]:.2f}')
 
 def mask_evaluation(mask_path, groundtruth_path):
     """
@@ -160,9 +163,60 @@ def output_predicted_paintings(query_list, paintings_predicted_list, paintings_g
 
         print('----------------------')
 
+def evaluate_frames(gt_frames_list, predicted_frames_list, params):
+
+    def _create_masks (ima_name, boxes):
+        img = cv.imread(ima_name) # trainImage
+
+        height, width, depth = img.shape
+        mask = np.zeros((height,width), np.uint8)
+
+        boxes = [np.array(box, np.int32).reshape((-1,1,2)) for box in boxes]
+        line_type = 8
+        cv.fillPoly(mask, boxes, (1))
+
+        return mask
+
+    images_list = params['lists']['query']
+
+    if len(predicted_frames_list) != len(gt_frames_list) or len(predicted_frames_list) != len(images_list):
+        print ('Error: length of frame boxes positions does not match ground truth')
+        print (len(predicted_frames_list), len(gt_frames_list), len(images_list))
+        sys.exit()
+
+    avg_pic_iou       = 0.0
+    avg_angular_error = 0.0
+    count = 0
+
+    for jj, ima_name in enumerate(images_list):
+        gt_frames    = [x[1] for x in gt_frames_list[jj]]
+        hy_frames    = [x[1] for x in predicted_frames_list[jj]]
+        gt_mask  = _create_masks(ima_name, gt_frames)
+        hy_mask  = _create_masks(ima_name, hy_frames)
+
+        avg_pic_iou       += jaccard_score(gt_mask.flatten(), hy_mask.flatten())
+
+        gt_angles    = [x[0] for x in gt_frames_list[jj]]
+        hy_angles    = [x[0] for x in predicted_frames_list[jj]]
+        common_vals = min(len(gt_angles), len(hy_angles))
+        for kk in range(common_vals):
+            gta = gt_angles[kk] * np.pi / 180
+            hya = hy_angles[kk] * np.pi / 180
+
+            v1 = [abs(np.cos(gta)),np.sin(gta)]
+            v2 = [abs(np.cos(hya)),np.sin(hya)]
+            ang_error = abs(np.arccos(np.dot(v1,v2)) * 180 / np.pi)
+            avg_angular_error += ang_error
+
+            count = count + 1
+
+    avg_pic_iou       /= len(predicted_frames_list)
+    avg_angular_error /= count
+    print ('F,{:.3f}, {:.3f}'.format(avg_angular_error, avg_pic_iou))
+
 def evaluate(params, k_list, verbose=False):
-    if params['remove'] is not None:
-        if params['remove']['bg']:
+    if params['augmentation'] is not None:
+        if params['augmentation']['bg']:
             bg_predicted_list = utils.path_to_list(params['paths']['results'], extension='png')
             bg_groundtruth_list = utils.path_to_list(params['paths']['query'], extension='png')
             # assert len(bg_groundtruth_list) == len(bg_predicted_list)
@@ -171,21 +225,26 @@ def evaluate(params, k_list, verbose=False):
             print('**********************')
             print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
 
-        # if params['remove'].text_extract:
+            if params['augmentation']['rotated']:
+                # evaluate frames.pkl
+                predicted_frames = utils.load_pickle(os.path.join(params['paths']['results'], 'frames.pkl'))
+                gt_frames = utils.load_pickle(os.path.join(params['paths']['query'], 'frames.pkl'))
+                evaluate_frames(gt_frames, predicted_frames, params)
+
+        # if params['augmentation'].text_extract:
         #     text_extract_predicted_list = path_to_list(params['paths'].results, extension='txt')
         #     text_extract_groundtruth_list = path_to_list(params['paths'].query, extension='txt')
         #     # assert len(text_groundtruth_list) == len(text_predicted_list)
         #     evaluate_text_extract(text_extract_predicted_list, text_extract_groundtruth_list)
 
-        if params['remove']['text']:
-            # text_boxes_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'))
-            # text_boxes_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'text_boxes.pkl'))
-
-            mean_iou = evaluate_text_boxes(os.path.join(params['paths']['query'], 'text_boxes.pkl'), os.path.join(params['paths']['results'], 'text_boxes.pkl'))
-            print('**********************')
-            print(f'Text bounding boxes evaluation: Mean IOU = {mean_iou}')
-            print('**********************')
-
+        # if params['augmentation']['text']:
+        #     # text_boxes_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'))
+        #     # text_boxes_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'text_boxes.pkl'))
+        #
+        #     mean_iou = evaluate_text_boxes(os.path.join(params['paths']['query'], 'text_boxes.pkl'), os.path.join(params['paths']['results'], 'text_boxes.pkl'))
+        #     print('**********************')
+        #     print(f'Text bounding boxes evaluation: Mean IOU = {mean_iou}')
+        #     print('**********************')
 
     paintings_predicted_list = utils.load_pickle(os.path.join(params['paths']['results'], 'result.pkl'))
     paintings_groundtruth_list = utils.load_pickle(os.path.join(params['paths']['query'], 'gt_corresps.pkl'))
