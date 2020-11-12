@@ -91,6 +91,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--use_surf', action='store_true',
                         help='use SURF to predict images')
 
+    parser.add_argument('--cluster_images', action='store_true',
+                        help='Cluster Images using diff Knn')
+
     args = parser.parse_args(args)
     return args
 
@@ -138,7 +141,7 @@ def args_to_params(args):
             'surf': args.use_surf
         }
     if not True in (args.use_color, args.use_texture, args.use_text,
-                    args.use_sift, args.use_orb, args.use_surf):
+                    args.use_sift, args.use_orb, args.use_surf, args.cluster_images):
         sys.error('No descriptor method specified')
 
     return params
