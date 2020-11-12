@@ -76,9 +76,9 @@ def signaltonoise(a, axis=0, ddof=0):
 def denoiseImage(img):
     gaussiana =  cv.medianBlur(img,3)
     psnr = PSNR(img, gaussiana)
-    if psnr < 33:
+    if psnr < 35:
         img = gaussiana
-    
+
     return img
 
 

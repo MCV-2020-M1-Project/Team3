@@ -1,5 +1,3 @@
-# boxes = pickle.load(open(os.path.join(boxes_path), 'rb'))[image_id][0]
-
 from collections import namedtuple
 import numpy as np
 import cv2 as cv

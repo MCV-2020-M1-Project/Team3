@@ -154,11 +154,16 @@ def detect_text_box(image):
     cnt = cv.findContours(laplacian, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
     area_imagen = image.shape[0] * image.shape[1]
 
+    xm = 0
+    ym = 0
+    wm = 0
+    hm = 0
+
     area_max = 0
     for c in cnt[0]:
-        # x,y,w,h = cv2.boundingRect(c)
-        # area = w*h
-        area = cv.contourArea(c)
+        x,y,w,h = cv.boundingRect(c)
+        area = w*h
+        # area = cv.contourArea(c)
         if area > 1000 and ((area / area_imagen) * 100 < 25):
             x, y, w, h = cv.boundingRect(c)
             if area > area_max:
