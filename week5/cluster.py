@@ -10,9 +10,10 @@ import os, glob, shutil
 import tensorflow as tf
 from collections import defaultdict
 
+from week4.histograms import  hog_histogram
+import week4.feature_descriptors as fd
 
 def get_color_images(images):
-    # This method would just flatten the matrices
     return np.array(np.float32(images).reshape(len(images), -1)/255)
 
 def get_keras_prediction(images):
@@ -25,6 +26,33 @@ def get_keras_prediction(images):
 
     return pred_images
 
+def hog_histogram_images(images):
+    print("HOG")
+    hg_histograms = [hog_histogram(image, None) for image in images]
+
+    pred_image_hist = np.array(np.float32(hg_histograms).reshape(len(hg_histograms), -1)/255)
+
+    return pred_image_hist
+
+def orb_feature_descriptor_detection(images):
+    # WIP. Can't figure out to reshape the descriptors properly
+    descriptors = []
+    for image in images:
+        _, orb_desc = fd.orb_descriptor(image, False)
+        if orb_desc is not None:
+            descriptors.append(np.array([orb_desc]))
+    #     break
+
+    # print(type(descriptors[0]))
+    # print(len(descriptors[0]))
+    # print("descriptor", descriptors[0][0])
+    # print("image", images[0][0])
+    # assert 99==100
+
+    flat_descriptors = np.array(np.float32(descriptors).reshape(len(descriptors), -1)/255)
+
+    return flat_descriptors
+
 def cluster(bbdd_list, clusters=2):
     # load the image and convert it from BGR to RGB so that
     # we can dispaly it with matplotlib
@@ -32,7 +60,9 @@ def cluster(bbdd_list, clusters=2):
     images = [cv.cvtColor(image, cv.COLOR_BGR2RGB) for image in images]
     
     # predicted_images = get_color_images(images) # Only Colour based matrices do not get very satisfactory results
-    predicted_images = get_keras_prediction(images)
+    # predicted_images = get_keras_prediction(images)
+    # predicted_images = orb_feature_descriptor_detection(images)
+    predicted_images = hog_histogram_images(images)
 
     clt = KMeans(n_clusters = clusters)
     clt.fit(predicted_images)
