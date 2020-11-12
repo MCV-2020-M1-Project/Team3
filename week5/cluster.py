@@ -31,6 +31,7 @@ def cluster(bbdd_list, clusters=2):
     images = [cv.resize(cv.imread(file), (224, 224)) for file in bbdd_list]
     images = [cv.cvtColor(image, cv.COLOR_BGR2RGB) for image in images]
     
+    # predicted_images = get_color_images(images) # Only Colour based matrices do not get very satisfactory results
     predicted_images = get_keras_prediction(images)
 
     clt = KMeans(n_clusters = clusters)
