@@ -4,25 +4,7 @@ from tqdm import tqdm
 
 from skimage import feature
 
-import week4.text_boxes as text_boxes
-
-def surf_descriptor(image, threshold=400):
-    #Find the SURF keypoints and descriptors of a given image
-    img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    surf = cv.xfeatures2d.SURF_create(threshold, )
-    kp, des = surf.detectAndCompute(img_gray, None)
-
-    return (kp, des)
-
-def calculate_distance(matches):
-    if matches is not None:
-        dist = 0
-        for m in matches:
-            dist += m.distance
-        dist /= len(matches)
-    else:
-        dist = 10000000000000
-    return dist
+import week5.text_boxes as text_boxes
 
 def get_matches_filtered(matches, th=450):
     matches_filtered = []
@@ -40,13 +22,15 @@ def orb_descriptor(img, bounding_rm=True):
 
     # orb = cv.ORB_create()
     if bounding_rm:
-        # text_box = text_boxes.detect_text_box(img)
-        # mask = np.zeros(img.shape,np.uint8)
-        # mask[text_box[1]:text_box[3],text_box[0]:text_box[2]] = 255
-        # mask = (255-mask)
-        # mask = cv.resize(mask, (256, 256), interpolation=cv.INTER_AREA)
-
-        kp,des=orb.detectAndCompute(img_gray, mask=None) # mask=None --> better results (fix boundingx box)
+        text_box = text_boxes.detect_text_box(img)
+        if text_box is None:
+            kp,des = orb.detectAndCompute(img_gray, mask=None)
+        else:
+            mask = np.zeros(img_gray.shape, np.uint8)
+            mask[text_box[1]:text_box[3],text_box[0]:text_box[2]] = 255
+            mask = (255-mask)
+            mask = cv.resize(mask, (256, 256), interpolation=cv.INTER_AREA)
+            kp,des=orb.detectAndCompute(img_gray, mask=mask) # mask=None --> better results (fix boundingx box)
     else:
         kp,des = orb.detectAndCompute(img_gray, mask=None)
 
