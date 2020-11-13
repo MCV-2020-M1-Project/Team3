@@ -284,13 +284,15 @@ def remove_bg_rotate2(img,params,image_id):
                 cv.drawContours(image, [box], 0, (36,255,12), 4)
                 previous_angle=angle
     
-    # result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')
-    # cv.imwrite(result_bg_path, mask)
+    result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')
+    cv.imwrite(result_bg_path, mask)
                 
     paintings,paintings_coords,paintings_coords_angle=utils.extract_rotated_paintings(paintings_coords_angle,img)            
     
-    for painting in paintings:
-        cv.imshow("wa",painting)
-        cv.waitKey()
+    for painting_id,painting in enumerate(paintings):
+
+        result_painting_path = os.path.join(params['paths']['results'],
+                                            image_id + '_' + str(painting_id) + '.jpg')
+        cv.imwrite(result_painting_path, painting)
 
     return [paintings, paintings_coords, paintings_coords_angle]
