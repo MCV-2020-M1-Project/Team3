@@ -156,7 +156,7 @@ def run():
     params = lists_to_params(params, bbdd_list, query_list)
 
     if args.cluster_images:
-        print("K:=", k)
+        print("Clusters:=", max(k))
         for technique in args.cluster_images.split(","):
             cluster.cluster(bbdd_list, max(k), technique)
     else:
