@@ -8,14 +8,13 @@ import multiprocessing.dummy as mp
 from functools import partial
 from itertools import repeat
 
-import week4.masks as masks
-import week4.histograms as histograms
-import week4.text_boxes as text_boxes_detection
-import week4.noise_removal as noise
-import week4.utils as utils
-import week4.feature_descriptors as feature_descriptors
-import week4.sift as sift
-import week4.image_to_text as text_detection
+import week5.masks as masks
+import week5.histograms as histograms
+import week5.text_boxes as text_boxes_detection
+import week5.noise_removal as noise
+import week5.utils as utils
+import week5.feature_descriptors as feature_descriptors
+import week5.image_to_text as text_detection
 
 def image_to_paintings(image_path, params):
     img = cv.imread(image_path)
@@ -23,19 +22,22 @@ def image_to_paintings(image_path, params):
 
     paintings=[img]
     text_boxes=[None]
-    text_boxes_shift=[None]
-
     paintings_coords = [[0,0,0,0]]
+    paintings_coords_angle = None
 
-    if params['remove'] is not None:
-        if params['remove']['bg']:
-            [paintings, paintings_coords] = masks.remove_bg(img, params, image_id)
+    if params['augmentation'] is not None:
+        if params['augmentation']['bg']:
+            if params['augmentation']['rotated']:
+                [paintings, paintings_coords, paintings_coords_angle] = masks.remove_bg_rotate(img, params, image_id)
 
-        if params['remove']['noise']:
+            else:
+                [paintings, paintings_coords] = masks.remove_bg(img, params, image_id)
+
+        if params['augmentation']['noise']:
             paintings = noise.denoise_paintings(paintings, params, image_id)
 
-        if params['remove']['text']:
-            [paintings, text_boxes, text_boxes_shift] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
+        if params['augmentation']['text']:
+            [paintings, text_boxes] = text_boxes_detection.remove_text(paintings, paintings_coords, params, image_id)
             # for idx,painting in enumerate(paintings):
             #     if text_boxes[idx] is not None:
             #         text_detected=text_detection.get_text(painting,text_boxes[idx])
@@ -44,27 +46,26 @@ def image_to_paintings(image_path, params):
             #         with open(predicted_text_path,"a+") as f:
             #             f.write(text_detected+"\n")
 
-    return [paintings, text_boxes, text_boxes_shift]
+    return [paintings, paintings_coords_angle, text_boxes]
 
 
 def get_k_images(params, k):
-
     pool_processes = 4
 
     paintings_predicted_list = []
+    paintings_coords_angle_list = []
 
     with mp.Pool(processes=pool_processes) as p:
 
         image_to_paintings_partial = partial(image_to_paintings, params=params)
 
         print('---Extracting paintings from images (optional: removing background or text)---')
-        [paintings, text_boxes, text_boxes_shift] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
-                                                  [path for path in params['lists']['query']]),
-                                                  total=len(params['lists']['query']))))
+        [paintings, paintings_coords_angle, text_boxes] = zip(*list(tqdm(p.imap(image_to_paintings_partial,
+                                                                                [path for path in params['lists']['query']]),
+                                                                        total=len(params['lists']['query']))))
 
-
-        utils.save_pickle(os.path.join(params['paths']['results'], 'text_boxes.pkl'), text_boxes_shift)
-
+        if paintings_coords_angle is not None:
+            utils.save_pickle(os.path.join(params['paths']['results'], 'frames.pkl'), list(paintings_coords_angle))
 
         all_distances = []
 
@@ -137,15 +138,6 @@ def get_k_images(params, k):
                     predicted_paintings_all.append(predicted_paintings_image)
 
                 return predicted_paintings_all
-
-            if params['features']['sift']:
-                print('NOT IMPLEMENTED')
-                # paintings_predicted_list = sift()
-                # match_dict = sift.process_query(query_list, bbdd_list)
-
-            if params['features']['surf']:
-                print('NOT IMPLEMENTED')
-                # paintings_predicted_list = feature_descriptors.surf()
 
         if params['text'] is not None:
             print('...Computing text histograms and distances...')

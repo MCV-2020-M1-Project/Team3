@@ -3,9 +3,9 @@ import sys
 import argparse
 import pickle
 
-import week4.retrieval as retrieval
-import week4.evaluation as evaluation
-import week4.utils as utils
+import week5.retrieval as retrieval
+import week5.evaluation as evaluation
+import week5.utils as utils
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -33,6 +33,9 @@ def parse_args(args=sys.argv[2:]):
 
     parser.add_argument('--remove_noise', action='store_true',
                         help='remove noise from noisy images')
+
+    parser.add_argument('--rotated', action='store_true',
+                        help='rotated paintings (week5)')
 
     parser.add_argument('--use_color', action='store_true',
                         help='use color descriptor')
@@ -73,26 +76,11 @@ def parse_args(args=sys.argv[2:]):
                         choices=['Levensthein', 'Hamming', 'Damerau'],
                         help='distance metric to compare images')
 
-    parser.add_argument('--number_blocks', type=int, default=16,
-                        help='number of blocks in which the image is divided if using the block-based histograms')
-
-    parser.add_argument('--multiresolution_blocks', type=lambda s: [int(item) for item in s.split(',')], default=[1,4,8,16],
-                        help='list of numbers of blocks in which the image is divided if using the multiresolution histograms')
-
-    parser.add_argument('--verbose', action='store_true',
-                        help='increase output verbosity: show k similar images per each query image')
-
-    parser.add_argument('--use_sift', action='store_true',
-                        help='use SIFT to predict images')
-
     parser.add_argument('--use_orb', action='store_true',
                         help='use ORB to predict images')
 
-    parser.add_argument('--use_surf', action='store_true',
-                        help='use SURF to predict images')
-
-    parser.add_argument('--cluster_images', action='store_true',
-                        help='Cluster Images using diff Knn')
+    parser.add_argument('--verbose', action='store_true',
+                        help='increase output verbosity: show k similar images per each query image')
 
     args = parser.parse_args(args)
     return args
@@ -103,7 +91,7 @@ def args_to_params(args):
         os.makedirs(results_path)
 
     params = {
-        'lists': None, 'paths': None, 'features': None, 'color': None, 'texture': None, 'text': None, 'remove': None
+        'lists': None, 'paths': None, 'features': None, 'color': None, 'texture': None, 'text': None, 'augmentation': None
     }
     params['paths'] = {
         'bbdd': args.bbdd_path,
@@ -127,21 +115,19 @@ def args_to_params(args):
             'weight': args.text_weight,
             'metric': args.text_metric
         }
-    if True in (args.remove_bg, args.remove_text, args.remove_noise):
-        params['remove'] = {
+    if True in (args.remove_bg, args.remove_text, args.remove_noise, args.rotated):
+        params['augmentation'] = {
             'bg': args.remove_bg,
             'max_paintings': args.max_paintings,
             'text': args.remove_text,
-            'noise': args.remove_noise
+            'noise': args.remove_noise,
+            'rotated': args.rotated
         }
-    if True in (args.use_sift, args.use_orb, args.use_surf):
+    if args.use_orb:
         params['features'] = {
-            'sift': args.use_sift,
-            'orb': args.use_orb,
-            'surf': args.use_surf
+            'orb': args.use_orb
         }
-    if not True in (args.use_color, args.use_texture, args.use_text,
-                    args.use_sift, args.use_orb, args.use_surf):
+    if not True in (args.use_color, args.use_texture, args.use_text, args.use_orb):
         sys.exit('[ERROR] No descriptor method specified')
 
     return params
@@ -171,3 +157,23 @@ def run():
 
     if not args.test:
         evaluation.evaluate(params, k, verbose=args.verbose)
+
+
+# import week4.retrieval as retrieval
+# import week4.evaluation as evaluation
+# import week4.utils as utils
+#
+# from week4.run_w4 import parse_args, args_to_params, lists_to_params
+# from week5 import cluster
+#     params = lists_to_params(params, bbdd_list, query_list)
+#
+#     if args.cluster_images:
+#         print("K:=", k)
+#         cluster.cluster(bbdd_list, max(k))
+#     else:
+#         paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
+#
+#         utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
+#
+#         if not args.test:
+#             evaluation.evaluate(params, k, verbose=args.verbose)

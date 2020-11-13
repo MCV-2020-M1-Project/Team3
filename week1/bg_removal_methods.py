@@ -5,8 +5,8 @@ import numpy as np
 from skimage import feature
 import scipy.stats as stats
 
-from week1 import evaluation as eval
 from week1 import masks as masks
+from week1 import evaluation as eval
 
 def get_mask_M0(image):
     """
@@ -106,7 +106,7 @@ def get_mask_M3(image):
     edges = cv.erode(edges, None)
 
     # find contours in the edged image
-    cnts = cv.findContours(edges.copy(), cv.RETR_LIST,
+    _,cnts,_ = cv.findContours(edges.copy(), cv.RETR_LIST,
         cv.CHAIN_APPROX_NONE)
     cnts = imutils.grab_contours(cnts)
 
@@ -223,10 +223,6 @@ def get_mask_M4(image):
         # cv.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
         # cv.imshow("image", image)
         # cv.waitKey()
-
-
-    # if not found:
-    #     mask = get_mask_M0(image)
 
     # cv.imshow('gray', gray)
     # cv.imshow('grad', grad)
