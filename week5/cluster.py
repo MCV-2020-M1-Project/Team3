@@ -14,7 +14,7 @@ from week4.histograms import  hog_histogram
 import week4.feature_descriptors as fd
 
 def get_color_images(images):
-    return np.array(np.float32(images).reshape(len(images), -1)/255)
+    return np.array(np.float32(images).reshape(len(images), -1)/255), False
 
 def get_keras_prediction(images):
     # Rudimentary Feature Extraction using Kerass
@@ -24,7 +24,7 @@ def get_keras_prediction(images):
     predictions = model.predict(images.reshape(-1, 224, 224, 3))
     pred_images = predictions.reshape(images.shape[0], -1)
 
-    return pred_images
+    return pred_images, False
 
 def hog_histogram_images(images):
     print("HOG")
@@ -32,7 +32,7 @@ def hog_histogram_images(images):
 
     pred_image_hist = np.array(np.float32(hg_histograms).reshape(len(hg_histograms), -1)/255)
 
-    return pred_image_hist
+    return pred_image_hist, False
 
 def orb_feature_descriptor_detection(images):
     # WIP. Can't figure out to reshape the descriptors properly
@@ -40,32 +40,35 @@ def orb_feature_descriptor_detection(images):
     for image in images:
         _, orb_desc = fd.orb_descriptor(image, False)
         if orb_desc is not None:
-            descriptors.append(np.array([orb_desc]))
-    #     break
+            descriptors.append(orb_desc)
 
-    # print(type(descriptors[0]))
-    # print(len(descriptors[0]))
-    # print("descriptor", descriptors[0][0])
-    # print("image", images[0][0])
-    # assert 99==100
+    return descriptors, True
 
-    flat_descriptors = np.array(np.float32(descriptors).reshape(len(descriptors), -1)/255)
-
-    return flat_descriptors
-
-def cluster(bbdd_list, clusters=2):
+def cluster(bbdd_list, clusters=2,  technique='hog'):
     # load the image and convert it from BGR to RGB so that
     # we can dispaly it with matplotlib
     images = [cv.resize(cv.imread(file), (224, 224)) for file in bbdd_list]
     images = [cv.cvtColor(image, cv.COLOR_BGR2RGB) for image in images]
     
-    # predicted_images = get_color_images(images) # Only Colour based matrices do not get very satisfactory results
-    # predicted_images = get_keras_prediction(images)
-    # predicted_images = orb_feature_descriptor_detection(images)
-    predicted_images = hog_histogram_images(images)
+    if technique=="colour":
+        predicted_images, do_itr = get_color_images(images) # Only Colour based matrices do not get very satisfactory results
+    elif technique=="keras":
+        predicted_images, do_itr = get_keras_prediction(images)
+    elif technique=="orb":
+        predicted_images, do_itr = orb_feature_descriptor_detection(images)
+    elif technique=="hog":
+        predicted_images, do_itr = hog_histogram_images(images)
+    else:
+        raise Exception("Invalid Clustering Technique")
 
     clt = KMeans(n_clusters = clusters)
-    clt.fit(predicted_images)
+
+    if do_itr:
+        for img_feature in predicted_images:
+            clt.fit(img_feature)
+    else:
+        clt.fit(predicted_images)
+
     kpredictions = clt.predict(predicted_images)
 
     for i in range(clusters):

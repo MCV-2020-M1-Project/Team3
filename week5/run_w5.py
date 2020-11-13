@@ -6,6 +6,7 @@ import pickle
 import week5.retrieval as retrieval
 import week5.evaluation as evaluation
 import week5.utils as utils
+from week5 import cluster
 
 def parse_args(args=sys.argv[2:]):
     parser = argparse.ArgumentParser(description='CBIR: Content Based Image Retrieval. MCV-M1-Project, Team 3')
@@ -82,6 +83,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
 
+    parser.add_argument('--cluster_images', type=str,
+                        help='Cluster Images')
+
     args = parser.parse_args(args)
     return args
 
@@ -127,7 +131,7 @@ def args_to_params(args):
         params['features'] = {
             'orb': args.use_orb
         }
-    if not True in (args.use_color, args.use_texture, args.use_text, args.use_orb):
+    if not True in (args.use_color, args.use_texture, args.use_text, args.use_orb, bool(args.cluster_images)):
         sys.exit('[ERROR] No descriptor method specified')
 
     return params
@@ -151,12 +155,16 @@ def run():
 
     params = lists_to_params(params, bbdd_list, query_list)
 
-    paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
+    if args.cluster_images:
+        print("K:=", k)
+        cluster.cluster(bbdd_list, max(k), args.cluster_images)
+    else:
+        paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 
-    utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
+        utils.save_pickle(os.path.join(params['paths']['results'], 'result.pkl'), paintings_predicted_list)
 
-    if not args.test:
-        evaluation.evaluate(params, k, verbose=args.verbose)
+        if not args.test:
+            evaluation.evaluate(params, k, verbose=args.verbose)
 
 
 # import week4.retrieval as retrieval
