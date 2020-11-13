@@ -3,6 +3,10 @@ import sys
 import pickle
 import numpy as np
 from glob import glob
+import imutils
+
+import week5.rotation as rotation
+import week5.masks as masks
 
 def path_to_list(data_path, extension='jpg'):
     path_list = sorted(glob(os.path.join(data_path,'*.'+extension)))
@@ -20,7 +24,7 @@ def save_pickle(pickle_path, pickle_file):
         return pickle.dump(pickle_file, f)
 
 def get_image_id(image_path):
-    image_filename = image_path.split('/')[-1]
+    image_filename = image_path.split('\\')[-1]
     image_id = image_filename.split('.')[0]
 
     return image_id
@@ -217,3 +221,186 @@ def sort_paintings(paintings_coords_aux):
                 paintings_coords.append(paintings_coords_aux[0])
 
     return paintings_coords
+
+
+## For method 2 of removing rotated bg
+def get_tl(p):
+    return p[0]+p[1]
+
+def extract_rotated_paintings(paintings_coords,img):
+    non_rotated_boxes=[]
+    
+    # to unrotate the original non-straight painting coords to a paralel to axis version
+    for painting_coord in paintings_coords:
+        theta,box=painting_coord
+        if 0 <= theta <= 90:
+            theta_aux = theta
+        elif 90 < theta <= 180:
+            theta_aux = -(180 - theta)
+            
+        non_rotated_box = rotation.rotate_coords(theta_aux,box,img.shape[:2])
+        non_rotated_boxes.append(non_rotated_box)
+
+    # to sort comparing the auxiliar unrotated boxes
+    sorted_paintings_coords=[] 
+    sorted_paintings_coords_angle=[]
+    rotated_img = imutils.rotate(img.copy(), angle=-theta_aux)
+    sorted_paintings = []
+    
+    if len(paintings_coords) == 1:
+        box1=non_rotated_boxes
+        tl1_coords=sorted(box1, key = get_tl, reverse = False)
+        tlx1 = int(tl1_coords[0][0])
+        tly1 = int(tl1_coords[0][1])
+        brx1 = int(tl1_coords[-1][0])
+        bry1 = int(tl1_coords[-1][1])
+        
+        sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+        sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+        sorted_paintings_coords_angle.append(paintings_coords)
+
+    elif len(paintings_coords) == 2:
+        box1=non_rotated_boxes[0]
+        tl1_coords=sorted(box1, key = get_tl, reverse = False)
+        tlx1 = int(tl1_coords[0][0])
+        tly1 = int(tl1_coords[0][1])
+        brx1 = int(tl1_coords[-1][0])
+        bry1 = int(tl1_coords[-1][1])
+
+        box2=non_rotated_boxes[1]
+        tl2_coords=sorted(box2, key = get_tl, reverse = False)
+        tlx2 = int(tl2_coords[0][0])
+        tly2 = int(tl2_coords[0][1])
+        brx2 = int(tl2_coords[-1][0])
+        bry2 = int(tl2_coords[-1][1])
+
+        if (tlx1 < tlx2 and brx1 < tlx2) or (tly1 < tly2 and bry1 < tly2):
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+            
+            sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+            sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])
+            
+            sorted_paintings_coords_angle.append(paintings_coords[0])
+            sorted_paintings_coords_angle.append(paintings_coords[1])
+             
+        else:
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+            
+            sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])
+            sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+            
+            sorted_paintings_coords_angle.append(paintings_coords[1])
+            sorted_paintings_coords_angle.append(paintings_coords[0])
+
+    elif len(paintings_coords)==3:
+        box1=non_rotated_boxes[0]
+        tl1_coords=sorted(box1, key = get_tl, reverse = False)
+        tlx1 = int(tl1_coords[0][0])
+        tly1 = int(tl1_coords[0][1])
+        brx1 = int(tl1_coords[-1][0])
+        bry1 = int(tl1_coords[-1][1])
+
+        box2=non_rotated_boxes[1]
+        tl2_coords=sorted(box2, key = get_tl, reverse = False)
+        tlx2 = int(tl2_coords[0][0])
+        tly2 = int(tl2_coords[0][1])
+        brx2 = int(tl2_coords[-1][0])
+        bry2 = int(tl2_coords[-1][1])
+
+        box3=non_rotated_boxes[2]
+        tl3_coords=sorted(box3, key = get_tl, reverse = False)
+        tlx3 = int(tl3_coords[0][0])
+        tly3 = int(tl3_coords[0][1])
+        brx3 = int(tl3_coords[-1][0])
+        bry3 = int(tl3_coords[-1][1])
+
+        left_12 = tlx1 < tlx2 and brx1 < tlx2
+        left_13 = tlx1 < tlx3 and brx1 < tlx3
+        left_23 = tlx2 < tlx3 and brx2 < tlx3
+        above_12 = tly1 < tly2 and bry1 < tly2
+        above_13 = tly1 < tly3 and bry1 < tly3
+        above_23 = tly2 < tly3 and bry2 < tly3
+
+        if (left_12 and left_13) or (above_12 and above_13):
+            if left_23 or above_23:
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+
+                sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+                sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])                
+                sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])
+                
+                sorted_paintings_coords_angle.append(paintings_coords[0])
+                sorted_paintings_coords_angle.append(paintings_coords[1])
+                sorted_paintings_coords_angle.append(paintings_coords[2])
+            else:
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+
+                sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+                sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])                
+                sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])
+                
+                sorted_paintings_coords_angle.append(paintings_coords[0])
+                sorted_paintings_coords_angle.append(paintings_coords[2])
+                sorted_paintings_coords_angle.append(paintings_coords[1])
+
+        elif left_12 or above_12:
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+
+            sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])
+            sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])                
+            sorted_paintings_coords.append([tlx2,tly2,brx2,bry2]) 
+            
+            sorted_paintings_coords_angle.append(paintings_coords[2])
+            sorted_paintings_coords_angle.append(paintings_coords[0])
+            sorted_paintings_coords_angle.append(paintings_coords[1])
+
+        elif left_13 or above_13:
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+            sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+
+            sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])
+            sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])                
+            sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])
+            
+            sorted_paintings_coords_angle.append(paintings_coords[1])
+            sorted_paintings_coords_angle.append(paintings_coords[0])
+            sorted_paintings_coords_angle.append(paintings_coords[2])
+
+        else:
+            if left_23 or above_23:
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+
+                sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])
+                sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])                
+                sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+                
+                sorted_paintings_coords_angle.append(paintings_coords[1])
+                sorted_paintings_coords_angle.append(paintings_coords[2])
+                sorted_paintings_coords_angle.append(paintings_coords[0])
+            else:
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx3,tly3,brx3,bry3]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx2,tly2,brx2,bry2]))
+                sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
+
+                sorted_paintings_coords.append([tlx3,tly3,brx3,bry3])
+                sorted_paintings_coords.append([tlx2,tly2,brx2,bry2])                
+                sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
+                
+                sorted_paintings_coords_angle.append(paintings_coords[2])
+                sorted_paintings_coords_angle.append(paintings_coords[1])
+                sorted_paintings_coords_angle.append(paintings_coords[0])
+
+
+   
+    return [sorted_paintings,sorted_paintings_coords,sorted_paintings_coords_angle]
