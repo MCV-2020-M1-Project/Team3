@@ -248,7 +248,7 @@ def extract_rotated_paintings(paintings_coords,img):
     sorted_paintings = []
     
     if len(paintings_coords) == 1:
-        box1=non_rotated_boxes
+        box1=non_rotated_boxes[0]
         tl1_coords=sorted(box1, key = get_tl, reverse = False)
         tlx1 = int(tl1_coords[0][0])
         tly1 = int(tl1_coords[0][1])
@@ -257,7 +257,7 @@ def extract_rotated_paintings(paintings_coords,img):
         
         sorted_paintings.append(masks.get_painting_from_mask(rotated_img, None, [tlx1,tly1,brx1,bry1]))
         sorted_paintings_coords.append([tlx1,tly1,brx1,bry1])
-        sorted_paintings_coords_angle.append(paintings_coords)
+        sorted_paintings_coords_angle.append(paintings_coords[0])
 
     elif len(paintings_coords) == 2:
         box1=non_rotated_boxes[0]
