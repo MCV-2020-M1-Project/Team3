@@ -157,7 +157,8 @@ def run():
 
     if args.cluster_images:
         print("K:=", k)
-        cluster.cluster(bbdd_list, max(k), args.cluster_images)
+        for technique in args.cluster_images.split(","):
+            cluster.cluster(bbdd_list, max(k), technique)
     else:
         paintings_predicted_list = retrieval.get_k_images(params, k=max(k))
 

@@ -14,11 +14,13 @@ from week4.histograms import  hog_histogram
 import week4.feature_descriptors as fd
 
 def get_color_images(images):
+    print("Using Colour for Clustering")
     return np.array(np.float32(images).reshape(len(images), -1)/255), False
 
 def get_keras_prediction(images):
+    print("Using Keras for Clustering")
     # Rudimentary Feature Extraction using Kerass
-    images = get_color_images(images)
+    images = np.array(np.float32(images).reshape(len(images), -1)/255)
 
     model = tf.keras.applications.MobileNetV2(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
     predictions = model.predict(images.reshape(-1, 224, 224, 3))
@@ -27,7 +29,7 @@ def get_keras_prediction(images):
     return pred_images, False
 
 def hog_histogram_images(images):
-    print("HOG")
+    print("Using HOG for Clustering")
     hg_histograms = [hog_histogram(image, None) for image in images]
 
     pred_image_hist = np.array(np.float32(hg_histograms).reshape(len(hg_histograms), -1)/255)
@@ -35,14 +37,20 @@ def hog_histogram_images(images):
     return pred_image_hist, False
 
 def orb_feature_descriptor_detection(images):
-    # WIP. Can't figure out to reshape the descriptors properly
-    descriptors = []
+    print("Using ORB for Clustering")
+    descriptors = np.array([])
     for image in images:
         _, orb_desc = fd.orb_descriptor(image, False)
         if orb_desc is not None:
-            descriptors.append(orb_desc)
+            descriptors = np.append(descriptors, orb_desc)
 
-    return descriptors, True
+    x = np.float32(descriptors)
+
+    y = x.reshape(len(descriptors), -1)/255
+
+    descriptors = np.array(y)
+
+    return descriptors, False
 
 def cluster(bbdd_list, clusters=2,  technique='hog'):
     # load the image and convert it from BGR to RGB so that
@@ -67,15 +75,17 @@ def cluster(bbdd_list, clusters=2,  technique='hog'):
         for img_feature in predicted_images:
             clt.fit(img_feature)
     else:
+        print("Fitting Features")
         clt.fit(predicted_images)
 
+    print("Predicting")
     kpredictions = clt.predict(predicted_images)
 
+    print("Clustering with", technique)
     for i in range(clusters):
-        os.makedirs("output\cluster" + str(i))
+        os.makedirs("output/"+technique+"/cluster" + str(i))
     for i in range(len(bbdd_list)):
-        print("clustering copying", i)
-        shutil.copy2(bbdd_list[i], "output\cluster"+str(kpredictions[i]))
+        shutil.copy2(bbdd_list[i], "output/"+technique+"/cluster"+str(kpredictions[i]))
 
     # hist = centroid_histogram(clt)
     # bar = plot_colors(hist, clt.cluster_centers_)
