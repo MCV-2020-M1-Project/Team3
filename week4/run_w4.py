@@ -91,6 +91,9 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--use_surf', action='store_true',
                         help='use SURF to predict images')
 
+    parser.add_argument('--cluster_images', action='store_true',
+                        help='Cluster Images using diff Knn')
+
     args = parser.parse_args(args)
     return args
 

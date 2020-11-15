@@ -79,6 +79,15 @@ def parse_args(args=sys.argv[2:]):
     parser.add_argument('--use_orb', action='store_true',
                         help='use ORB to predict images')
 
+    parser.add_argument('--thr_matches', type=int, default=4,
+                        help='minimum number of key point matches to match two paintings')
+
+    parser.add_argument('--max_ratio', type=str, default='0.8',
+                        help='max ratio used in match_descriptors function')
+
+    parser.add_argument('--max_distance', type=str, default='1.2',
+                        help='max distance used in match_descriptors function')
+
     parser.add_argument('--verbose', action='store_true',
                         help='increase output verbosity: show k similar images per each query image')
 
@@ -91,7 +100,7 @@ def args_to_params(args):
         os.makedirs(results_path)
 
     params = {
-        'lists': None, 'paths': None, 'features': None, 'color': None, 'texture': None, 'text': None, 'augmentation': None
+        'lists': None, 'paths': None, 'orb': None, 'color': None, 'texture': None, 'text': None, 'augmentation': None
     }
     params['paths'] = {
         'bbdd': args.bbdd_path,
@@ -124,8 +133,10 @@ def args_to_params(args):
             'rotated': args.rotated
         }
     if args.use_orb:
-        params['features'] = {
-            'orb': args.use_orb
+        params['orb'] = {
+            'thr_matches': args.thr_matches,
+            'max_ratio': args.max_ratio,
+            'max_distance': args.max_distance
         }
     if not True in (args.use_color, args.use_texture, args.use_text, args.use_orb):
         sys.exit('[ERROR] No descriptor method specified')
@@ -157,3 +168,6 @@ def run():
 
     if not args.test:
         evaluation.evaluate(params, k, verbose=args.verbose)
+
+    else:
+        evaluation.output_predicted_paintings_test(params, paintings_predicted_list, max(k))
