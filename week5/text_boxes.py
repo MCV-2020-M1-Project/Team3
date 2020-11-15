@@ -163,7 +163,7 @@ def detect_text_box(img):
 
     return final_best_box
 
-def remove_text(paintings, paintings_coords, params, image_id):
+def remove_text(paintings, params, image_id):
     text_boxes = []
 
     for painting_id in range(len(paintings)):

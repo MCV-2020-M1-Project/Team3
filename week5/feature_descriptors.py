@@ -14,44 +14,50 @@ def get_matches_filtered(matches, th=450):
             matches_filtered.append(m)
     return matches_filtered
 
-def orb_descriptor(img, bounding_rm=True):
-    img_gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-
+def orb_descriptor(img, text_box):
+    img_gray = cv.cvtColor(img.copy(),cv.COLOR_BGR2GRAY)
     img_gray = cv.resize(img_gray, (256, 256), interpolation=cv.INTER_AREA)
-    orb = cv.ORB_create(scaleFactor=1.1, WTA_K=2, fastThreshold=5)
 
+    orb = cv.ORB_create(scaleFactor=1.1, WTA_K=2, fastThreshold=5)
     # orb = cv.ORB_create()
-    if bounding_rm:
-        text_box = text_boxes.detect_text_box(img)
-        if text_box is None:
-            kp,des = orb.detectAndCompute(img_gray, mask=None)
-        else:
-            mask = np.zeros(img_gray.shape, np.uint8)
-            mask[text_box[1]:text_box[3],text_box[0]:text_box[2]] = 255
-            mask = (255-mask)
-            mask = cv.resize(mask, (256, 256), interpolation=cv.INTER_AREA)
-            kp,des=orb.detectAndCompute(img_gray, mask=mask) # mask=None --> better results (fix boundingx box)
+
+    if text_box is not None:
+        mask = np.zeros(img.shape[:2], np.uint8)
+        mask[text_box[1]:text_box[3],text_box[0]:text_box[2]] = 255
+        mask = (255-mask)
+        mask = cv.resize(mask, (256, 256), interpolation=cv.INTER_AREA)
+
+        cv.imwrite('i.jpg', img_gray)
+        cv.imwrite('m.jpg', mask)
+
+        kp,des=orb.detectAndCompute(img_gray, mask=mask) # mask=None --> better results (fix boundingx box)
     else:
         kp,des = orb.detectAndCompute(img_gray, mask=None)
 
     return (kp,des)
 
-def get_top_matches(matches):
+def get_top_matches(matches, params):
+    thr_matches = params['orb']['thr_matches']
     top_matches = np.argsort(np.array(matches))[-10:][::-1]
-    if matches[top_matches[0]] >= 4:
+    if matches[top_matches[0]] >= thr_matches:
         return top_matches
     else:
         return None
 
-def match_descriptors(bbdd_kp_des, query_des):
+def match_descriptors(bbdd_kp_des, query_des, params):
+    max_ratio_aux = params['orb']['max_ratio']
+    max_distance_aux = params['orb']['max_distance']
+    max_ratio=float(max_ratio_aux.replace(',', '.'))
+    max_distance=float(max_distance_aux.replace(',', '.'))
+
     bd_kp, bd_des = bbdd_kp_des
     if len(bd_kp) > 0:
         matches = len(feature.match_descriptors(bd_des, query_des,
-                                                metric='hamming', max_ratio=0.8, max_distance=0.8, p=1))
+                                                metric='hamming', max_ratio=max_ratio, max_distance=max_distance, p=1))
     else:
         matches = 0
     return matches
 
 def compute_bbdd_orb_descriptors(bbdd_path):
     im = cv.imread(bbdd_path)
-    return orb_descriptor(im, False)
+    return orb_descriptor(im, None)
