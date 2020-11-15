@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Editor de Spyder
-
-Este es un archivo temporal.
-"""
 import cv2 as cv
 import numpy as np
 import imutils
@@ -63,7 +57,7 @@ def get_best_rectangle(rectangles, img):
     idx_best_rectangle = np.argsort(distances)[0]
     return rectangles[idx_best_rectangle]
 
-def get_best_box(img, filter1_size_x, filter1_size_y, threshold, filter2_size_x, filter2_size_y):
+def get_best_box(img, imshow, filter1_size_x, filter1_size_y, threshold, filter2_size_x, filter2_size_y):
 
     # Getting the kernel to be used in Gradient
     filterSize = (filter1_size_x,filter1_size_y)
@@ -92,8 +86,8 @@ def get_best_box(img, filter1_size_x, filter1_size_y, threshold, filter2_size_x,
         return closed_hat_img
 
 
-    closed_top_hat = _compute_morphology_roi(top_hat, kernel_roi)
-    closed_black_hat = _compute_morphology_roi(black_hat, kernel_roi)
+    closed_top_hat = _compute_morphology_roi(top_hat.copy(), kernel_roi)
+    closed_black_hat = _compute_morphology_roi(black_hat.copy(), kernel_roi)
 
     def _get_constrained_rectangles(img, imgshow, aux):
         contours = cv.findContours(img, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
@@ -109,15 +103,16 @@ def get_best_box(img, filter1_size_x, filter1_size_y, threshold, filter2_size_x,
               x, y, w, h = cv.boundingRect(c)
               r = float(cv.countNonZero(img[y:y+h, x:x+w])) / (w * h)
               if (w_img/10 < w < w_img*0.95) and (h_img/40 < h < h_img/2) and (w > h*2) and r > 0.35:
-                  cv.rectangle(imgshow, (x, y), (x + w, y + h), (0,0,255), 10)
+                  cv.rectangle(imgshow, (x, y), (x + w, y + h), (0,0,255), 3)
                   rectangles_aux.append((x,y,w,h))
 
-        # cv.imshow(str(aux), imutils.resize(imgshow, height=600))
+        cv.imshow(str(aux), imutils.resize(imgshow, height=600))
+        cv.waitKey()
 
         return rectangles_aux
 
-    rectangles_top = _get_constrained_rectangles(closed_top_hat, img, 0)
-    rectangles_black = _get_constrained_rectangles(closed_black_hat, img, 1)
+    rectangles_top = _get_constrained_rectangles(closed_top_hat, imshow, 0)
+    rectangles_black = _get_constrained_rectangles(closed_black_hat, imshow, 1)
 
     rectangles = rectangles_top + rectangles_black
 
@@ -126,11 +121,17 @@ def get_best_box(img, filter1_size_x, filter1_size_y, threshold, filter2_size_x,
     else:
         final_rect = get_best_rectangle(rectangles, img)
 
-    # cv.imshow('top', imutils.resize(top_hat,height=600))
-    # cv.imshow('black', imutils.resize(black_hat,height=600))
-    # cv.imshow('closed_top', imutils.resize(closed_top_hat,height=600))
-    # cv.imshow('closed_black', imutils.resize(closed_top_hat,height=600))
-    # cv.waitKey()
+    cv.imshow('top', imutils.resize(top_hat,height=600))
+    cv.imshow('black', imutils.resize(black_hat,height=600))
+    cv.imshow('closed_top', imutils.resize(closed_top_hat,height=600))
+    cv.imshow('closed_black', imutils.resize(closed_black_hat,height=600))
+
+    cv.imwrite('imshow.jpg', imshow)
+    cv.imwrite('top.jpg', top_hat)
+    cv.imwrite('black.jpg', black_hat)
+    cv.imwrite('top_closed.jpg', closed_top_hat)
+    cv.imwrite('black_closed.jpg', closed_black_hat)
+    cv.waitKey()
 
     return final_rect
 
@@ -140,14 +141,17 @@ def detect_text_box(img):
 
     best_boxes_lab = []
 
-    best_boxes_lab.append(get_best_box(l, 60, 30, 150, 90, 1))
-    best_boxes_lab.append(get_best_box(a, 60, 30, 25, 90, 1))
-    best_boxes_lab.append(get_best_box(b, 60, 30, 20, 90, 1))
+    cv.imwrite('a.jpg',a)
+    cv.imwrite('b.jpg',b)
+
+    # best_boxes_lab.append(get_best_box(l, img.copy(), 60, 30, 150, 90, 1))
+    best_boxes_lab.append(get_best_box(a, img.copy(), 60, 30, 25, 90, 1))
+    # best_boxes_lab.append(get_best_box(b, img.copy(), 60, 30, 20, 90, 1))
 
     for best_box_lab in best_boxes_lab:
         if best_box_lab is not None:
             [x,y,w,h] = best_box_lab
-            cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 5)
+            # cv.rectangle(img, (x, y), (x + w, y + h), (0,0,255), 2)
 
     final_best_box = get_best_rectangle(best_boxes_lab, img)
 
@@ -158,15 +162,15 @@ def detect_text_box(img):
         final_best_box = [x, y, x+w, y+h]
 
         [tlx,tly,brx,bry] = final_best_box
-        cv.rectangle(img, (tlx, tly), (brx, bry), (0,255,0), 3)
+        cv.rectangle(img, (tlx, tly), (brx, bry), (0,255,0), 5)
 
-        def _expand_box(img, box, sigma=0.02):
+        def _expand_box(img, box, sigmax=0.02, sigmay=0.25):
             [tlx,tly,brx,bry] = box
-            tlx_expanded = int(tlx*(1-0.005))
-            tly_expanded = int(tly*(1-0.02))
-            brx_expanded = int(brx*(1+0.005))
-            bry_expanded = int(bry*(1+0.02))
-            cv.rectangle(img, (tlx_expanded, tly_expanded), (brx_expanded, bry_expanded), (255,0,0), 3)
+            tlx_expanded = int(tlx*(1-sigmax))
+            tly_expanded = int(tly*(1-sigmay))
+            brx_expanded = int(brx*(1+sigmax))
+            bry_expanded = int(bry*(1+sigmay))
+            # cv.rectangle(img, (tlx_expanded, tly_expanded), (brx_expanded, bry_expanded), (255,0,0), 3)
             expanded_box = [tlx_expanded, tly_expanded, brx_expanded, bry_expanded]
             return expanded_box
 
@@ -174,7 +178,7 @@ def detect_text_box(img):
 
     return final_best_box
 
-query_path = 'data/qsd1_w4_denoised'
+query_path = '/home/oscar/Desktop/Slides'
 
 for query_filename in sorted(os.listdir(query_path)):
     image_id = int(query_filename.replace('.jpg', ''))
@@ -183,5 +187,6 @@ for query_filename in sorted(os.listdir(query_path)):
     print(image_id)
     # if image_id == 5:
     text_box = detect_text_box(img)
-    cv.imshow(str(image_id),imutils.resize(img,height=600))
+    cv.imwrite('img.jpg', img)
+    cv.imshow('img',imutils.resize(img,height=600))
     cv.waitKey()
