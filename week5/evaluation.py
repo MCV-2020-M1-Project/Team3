@@ -8,7 +8,7 @@ import os
 from sklearn.metrics import jaccard_score
 import ml_metrics as mlm
 
-import week5.utils as utils
+from week5 import utils as utils
 
 # -------------------------------------------
 # print(f'Img ID: {image_id} -> Err: {ang_error:.2f} Gt: {gt_angles[kk]:.2f} Pred: {hy_angles[kk]:.2f}')
@@ -232,21 +232,21 @@ def evaluate_frames(gt_frames_list, predicted_frames_list, params):
     print ('F,{:.3f}, {:.3f}'.format(avg_angular_error, avg_pic_iou))
 
 def evaluate(params, k_list, verbose=False):
-    # if params['augmentation'] is not None:
-    #     if params['augmentation']['bg']:
-    #         bg_predicted_list = utils.path_to_list(params['paths']['results'], extension='png')
-    #         bg_groundtruth_list = utils.path_to_list(params['paths']['query'], extension='png')
-    #         # assert len(bg_groundtruth_list) == len(bg_predicted_list)
-    #         avg_precision, avg_recall, avg_f1 = evaluate_bg(bg_predicted_list, bg_groundtruth_list, verbose)
-    #
-    #         print('**********************')
-    #         print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
-    #
-    #         if params['augmentation']['rotated']:
-    #             # evaluate frames.pkl
-    #             predicted_frames = utils.load_pickle(os.path.join(params['paths']['results'], 'frames.pkl'))
-    #             gt_frames = utils.load_pickle(os.path.join(params['paths']['query'], 'frames.pkl'))
-    #             evaluate_frames(gt_frames, predicted_frames, params)
+    if params['augmentation'] is not None:
+        if params['augmentation']['bg']:
+            bg_predicted_list = utils.path_to_list(params['paths']['results'], extension='png')
+            bg_groundtruth_list = utils.path_to_list(params['paths']['query'], extension='png')
+            # assert len(bg_groundtruth_list) == len(bg_predicted_list)
+            avg_precision, avg_recall, avg_f1 = evaluate_bg(bg_predicted_list, bg_groundtruth_list, verbose)
+
+            print('**********************')
+            print('Average --> Precision: {:.2f}, Recall: {:.2f}, F1-score: {:.2f}'.format(avg_precision, avg_recall, avg_f1))
+
+            if params['augmentation']['rotated']:
+                # evaluate frames.pkl
+                predicted_frames = utils.load_pickle(os.path.join(params['paths']['results'], 'frames.pkl'))
+                gt_frames = utils.load_pickle(os.path.join(params['paths']['query'], 'frames.pkl'))
+                evaluate_frames(gt_frames, predicted_frames, params)
 
         # if params['augmentation'].text_extract:
         #     text_extract_predicted_list = path_to_list(params['paths'].results, extension='txt')
@@ -293,13 +293,13 @@ def evaluate(params, k_list, verbose=False):
 
                     predicted_paintings_list_eval.append(predicted_painting)
 
-        with open("optimize_orb_params.txt", "a") as myfile:
-            myfile.write('\n')
-            myfile.write('Params (m, r, d): ' + str(params['orb']['thr_matches']) + ',' + str(params['orb']['max_ratio']) +
-                         ', ' + str(params['orb']['max_distance']) + ' ----> Map@1 = ' +
-                         str(mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)))
+        # with open("optimize_orb_params.txt", "a") as myfile:
+        #     myfile.write('\n')
+        #     myfile.write('Params (m, r, d): ' + str(params['orb']['thr_matches']) + ',' + str(params['orb']['max_ratio']) +
+        #                  ', ' + str(params['orb']['max_distance']) + ' ----> Map@1 = ' +
+        #                  str(mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)))
 
         print('**********************')
-        print('Params (m, r, d): ' + str(params['orb']['thr_matches']) + ',' + str(params['orb']['max_ratio']) +
-                     ', ' + str(params['orb']['max_distance']))
+        # print('Params (m, r, d): ' + str(params['orb']['thr_matches']) + ',' + str(params['orb']['max_ratio']) +
+        #              ', ' + str(params['orb']['max_distance']))
         print(f'MAP@{k}: {mlm.mapk(groundtruth_paintings_list_eval, predicted_paintings_list_eval, k)}')

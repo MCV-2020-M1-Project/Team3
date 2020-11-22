@@ -63,7 +63,7 @@ def get_text(img, text_box):
     text_filtered = ''.join((filter(lambda s: s not in special_chars, text)))
     final_text = ' '.join(text_filtered.split())
 
-    print(f'Text before: {text} --> Text filtered: {final_text}')
+    # print(f'Text before: {text} --> Text filtered: {final_text}')
     return final_text
 
 def get_text_distance(text_1,text_2,distance_metric="Levensthein"):

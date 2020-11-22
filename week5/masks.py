@@ -8,7 +8,7 @@ import operator
 
 import week5.rotation as rotation
 import week5.evaluation as evaluation
-import week5.utils as utils
+from week5 import utils as utils
 
 def get_painting_from_mask(img, bg_mask, painting_coords):
     """
@@ -82,7 +82,7 @@ def get_bg_mask(img, image_id, max_paintings, rotation_theta):
 
         # # # approximate to the rectangle
         x, y, w, h = cv.boundingRect(c)
-        if w > gray.shape[1]/8 and h > gray.shape[0]/6:
+        if w < 0.98*gray.shape[1] and w > gray.shape[1]/8 and h > gray.shape[0]/6:
             mask[y:y+h,x:x+w]=255 # fill the mask
 
     found = False
@@ -92,13 +92,17 @@ def get_bg_mask(img, image_id, max_paintings, rotation_theta):
 
     paintings_coords_aux = []
     for c in cnts:
-          # # approximate to the rectangle
-          x, y, w, h = cv.boundingRect(c)
-          paintings_coords_aux.append([x,y,x+w,y+h])
-          found = True
 
-          if len(paintings_coords_aux) == max_paintings:
-              break
+        # # approximate to the rectangle
+        x, y, w, h = cv.boundingRect(c)
+
+        mask[y:y+h,x:x+w]=255 # fill the mask
+
+        paintings_coords_aux.append([x,y,x+w,y+h])
+        found = True
+
+        if len(paintings_coords_aux) == max_paintings:
+          break
 
     if not found:
         paintings_coords = [0,0,img.shape[1],img.shape[0]]
@@ -183,49 +187,49 @@ def get_angle(box):
         angle_in_degrees+=180
     width=abs(lower_corners[0][0]-lower_corners[1][0])
     height=abs(lower_corners[0][1]-lower_corners[2][1])
-    
+
     return angle_in_degrees,width,height
 
-    
+
 def area_rect(e):
     area=e[1][0]*e[1][1]
     return area
 
 def discard_overlapping_rectangles(rectangles):
-    
+
     if len(rectangles)>1:
-           
+
         biggest_area_rect = rectangles[0]
         clean_rectangles=[biggest_area_rect]
-        
+
         cx1 = biggest_area_rect[0][0]
         cy1 = biggest_area_rect[0][1]
         w1 = biggest_area_rect[1][1]
         h1 = biggest_area_rect[1][0]
-    
+
         for rect in rectangles[1:]:
             # to check they are overlapping
             cx2=rect[0][0]
             cy2=rect[0][1]
-            
+
             overlapping = ((cx1-w1/2) < cx2 < (cx1+w1/2)) and ((cy1-h1/2) < cy2 < (cy1+h1/2))
-    
+
             if not overlapping:
                 clean_rectangles.append(rect)
-    
+
     else:
          clean_rectangles=rectangles
-        
+
     return sorted(clean_rectangles, key = area_rect, reverse = True)
-    
-    
-    
-    
+
+
+
+
 def remove_bg_rotate2(img,params,image_id):
-    
+
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     edges1 = feature.canny(gray, sigma=3,low_threshold=18,high_threshold=36)
-    
+
     mask=np.zeros(gray.shape)
     mask1=mask.copy()
     mask1[edges1]=255
@@ -233,19 +237,19 @@ def remove_bg_rotate2(img,params,image_id):
 
     # cv.imshow("mask", imutils.resize(mask1,height=500))
     # cv.waitKey()
-    
+
     # 20,20
     kernel = cv.getStructuringElement(cv.MORPH_RECT,(20,20))
     closed = cv.morphologyEx(mask1, cv.MORPH_CLOSE, kernel)
 
     # cv.imshow("closed", imutils.resize(closed,height=500))
     # cv.waitKey()
-    
+
     cnts = cv.findContours(closed.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    
+
     cnts = sorted(cnts, key = cv.contourArea, reverse = True)[:3]
-    
+
     w_img=img.shape[1]
     h_img=img.shape[0]
     area_img=w_img*h_img
@@ -253,17 +257,17 @@ def remove_bg_rotate2(img,params,image_id):
     rectangles=[]
     for c in cnts:
         rectangles.append(cv.minAreaRect(c))
-    
-    clean_rectangles=discard_overlapping_rectangles(rectangles) 
+
+    clean_rectangles=discard_overlapping_rectangles(rectangles)
 
 
     paintings_coords_angle=[]
     previous_angle = None
-    image=img.copy()    
-    for rect in clean_rectangles:        
+    image=img.copy()
+    for rect in clean_rectangles:
         box = cv.boxPoints(rect)
         box = np.int0(box)
-       
+
         p1=[box[0][0],box[0][1]]
         p2=[box[1][0],box[1][1]]
         p3=[box[2][0],box[2][1]]
@@ -283,12 +287,12 @@ def remove_bg_rotate2(img,params,image_id):
                 mask=cv.fillConvexPoly(mask,box,255)
                 cv.drawContours(image, [box], 0, (36,255,12), 4)
                 previous_angle=angle
-    
+
     result_bg_path = os.path.join(params['paths']['results'], image_id + '.png')
     cv.imwrite(result_bg_path, mask)
-                
-    paintings,paintings_coords,paintings_coords_angle=utils.extract_rotated_paintings(paintings_coords_angle,img)            
-    
+
+    paintings,paintings_coords,paintings_coords_angle=utils.extract_rotated_paintings(paintings_coords_angle,img)
+
     for painting_id,painting in enumerate(paintings):
 
         result_painting_path = os.path.join(params['paths']['results'],

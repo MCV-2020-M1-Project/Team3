@@ -178,5 +178,5 @@ def run():
         if not args.test:
             evaluation.evaluate(params, k, verbose=args.verbose)
 
-    else:
-        evaluation.output_predicted_paintings_test(params, paintings_predicted_list, max(k))
+        else:
+            evaluation.output_predicted_paintings_test(params, paintings_predicted_list, max(k))

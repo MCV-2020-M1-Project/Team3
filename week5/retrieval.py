@@ -38,13 +38,13 @@ def image_to_paintings(image_path, params):
 
         if params['augmentation']['text']:
             [paintings, text_boxes] = text_boxes_detection.remove_text(paintings, params, image_id)
-            # for idx,painting in enumerate(paintings):
-            #     if text_boxes[idx] is not None:
-            #         text_detected=text_detection.get_text(painting,text_boxes[idx])
-            #
-            #         predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
-            #         with open(predicted_text_path,"a+") as f:
-            #             f.write(text_detected+"\n")
+            for idx,painting in enumerate(paintings):
+                if text_boxes[idx] is not None:
+                    text_detected=text_detection.get_text(painting,text_boxes[idx])
+
+                    predicted_text_path = os.path.join(params['paths']['results'], '{}.txt'.format(image_id))
+                    with open(predicted_text_path,"a+") as f:
+                        f.write(text_detected+"\n")
 
     return [paintings, paintings_coords_angle, text_boxes]
 
